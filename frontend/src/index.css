@@ -1,0 +1,17 @@
+/* Reset some default browser styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Make sure body and html take full height */
+html, body, #root {
+  height: 100%;
+}
+
+/* Optional: default font */
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f5f5f5;
+}
