@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import API from "../api";
 
 const CreateProduct = () => {
   const [title, setTitle] = useState("");
@@ -23,7 +24,7 @@ const CreateProduct = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get("https://loopmarket-backend1.onrender.com/categories");
+      const res = await axios.get(`${API}/categories`);
       setCategories(res.data);
     } catch (err) {
       console.error(err);
@@ -36,14 +37,14 @@ const CreateProduct = () => {
 
     try {
       // 1️⃣ create location (FIXED using locationText)
-      const locRes = await axios.post("https://loopmarket-backend1.onrender.com/locations", {
+      const locRes = await axios.post(`${API}/locations`, {
         name: locationText,
       });
 
       const location_id = locRes.data.location_id;
 
       // 2️⃣ create product
-      await axios.post("https://loopmarket-backend1.onrender.com/products", {
+      await axios.post(`${API}/products`, {
         title,
         description,
         price,

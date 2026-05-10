@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import API from "../api";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -17,12 +18,12 @@ const ProductDetails = () => {
 
   const fetchProduct = async () => {
     try {
-      const res = await axios.get(`https://loopmarket-backend1.onrender.com/products/${id}`);
+      const res = await axios.get(`${API}/products/${id}`);
       setProduct(res.data);
 
       // fetch seller info
       const userRes = await axios.get(
-        `https://loopmarket-backend1.onrender.com/users/${res.data.user_id}`
+        `${API}/users/${res.data.user_id}`
       );
       setSeller(userRes.data);
     } catch (err) {
@@ -76,7 +77,7 @@ const ProductDetails = () => {
       <button
         onClick={async () => {
           try {
-            await axios.post("https://loopmarket-backend1.onrender.com/wishlist", {
+            await axios.post(`${API}/wishlist`, {
               user_id: user.id,
               product_id: product.id,
             });

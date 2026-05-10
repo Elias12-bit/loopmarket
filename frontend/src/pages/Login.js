@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
+import API from "../api";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const Login = () => {
   e.preventDefault();
 
   try {
-    const res = await axios.post("https://loopmarket-backend1.onrender.com/login", form);
+    const res = await axios.post(`${API}/login`, form);
 
     // ✅ SAVE USER IN LOCAL STORAGE (HERE)
     localStorage.setItem("user", JSON.stringify(res.data));

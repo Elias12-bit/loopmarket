@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import API from "../api";
 
 const ChatPage = () => {
   const currentUserId = 1; // ⚠️ replace later
@@ -16,7 +17,7 @@ const ChatPage = () => {
   const fetchConversations = async () => {
     try {
       const res = await axios.get(
-        `https://loopmarket-backend1.onrender.com/conversations/${currentUserId}`
+        `${API}/conversations/${currentUserId}`
       );
       setConversations(res.data);
     } catch (err) {
@@ -27,7 +28,7 @@ const ChatPage = () => {
   const fetchMessages = async (userId) => {
     try {
       const res = await axios.get(
-        `https://loopmarket-backend1.onrender.com/messages/${currentUserId}/${userId}`
+        `${API}/messages/${currentUserId}/${userId}`
       );
       setMessages(res.data);
     } catch (err) {
@@ -44,7 +45,7 @@ const ChatPage = () => {
     if (!text.trim()) return;
 
     try {
-      await axios.post("https://loopmarket-backend1.onrender.com/messages", {
+      await axios.post(`${API}/messages`, {
         sender_id: currentUserId,
         receiver_id: selectedUser.id,
         message: text,

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import API from "../api";
 
 const EditProfile = () => {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ const EditProfile = () => {
 
   const fetchUser = async () => {
     try {
-      const res = await axios.get(`https://loopmarket-backend1.onrender.com/users/${userId}`);
+      const res = await axios.get(`${API}/users/${userId}`);
       setForm(res.data);
     } catch (err) {
       console.error(err);
@@ -38,7 +39,7 @@ const EditProfile = () => {
 
   const handleSave = async () => {
     try {
-      await axios.put(`https://loopmarket-backend1.onrender.com/users/${userId}`, form);
+      await axios.put(`${API}/users/${userId}`, form);
       navigate("/profile");
     } catch (err) {
       console.error(err);

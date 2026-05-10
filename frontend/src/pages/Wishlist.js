@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import ProductCard from "../components/ProductCard";
+import API from "../api";
 
 const Wishlist = () => {
   const [products, setProducts] = useState([]);
@@ -12,7 +13,7 @@ const Wishlist = () => {
 
   const fetchWishlist = async () => {
     try {
-      const res = await axios.get(`https://loopmarket-backend1.onrender.com/wishlist/${userId}`);
+      const res = await axios.get(`${API}/wishlist/${userId}`);
       setProducts(res.data);
     } catch (err) {
       console.error(err);
@@ -21,7 +22,7 @@ const Wishlist = () => {
 
   const removeFromWishlist = async (productId) => {
     try {
-      await axios.delete("https://loopmarket-backend1.onrender.com/wishlist", {
+      await axios.delete(`${API}/wishlist`, {
         data: {
           user_id: userId,
           product_id: productId,

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
+import API from "../api";
 
 const Home = () => {
   const [products, setProducts] = useState([]);
@@ -18,7 +19,7 @@ const Home = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await axios.get("https://loopmarket-backend1.onrender.com/products");
+      const res = await axios.get(`${API}/products`);
       setProducts(res.data);
     } catch (err) {
       console.log(err);
@@ -27,7 +28,7 @@ const Home = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get("https://loopmarket-backend1.onrender.com/categories");
+      const res = await axios.get(`${API}/categories`);
       setCategories(res.data);
     } catch (err) {
       console.log(err);

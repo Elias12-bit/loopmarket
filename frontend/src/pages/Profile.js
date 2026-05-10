@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import API from "../api";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -14,7 +15,7 @@ const Profile = () => {
 
   const fetchUser = async () => {
     try {
-      const res = await axios.get(`https://loopmarket-backend1.onrender.com/users/${userId}`);
+      const res = await axios.get(`${API}/users/${userId}`);
       setUser(res.data);
     } catch (err) {
       console.error(err);

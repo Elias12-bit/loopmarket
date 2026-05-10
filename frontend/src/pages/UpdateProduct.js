@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
+import API from "../api";
 
 const UpdateProduct = () => {
   const { id } = useParams();
@@ -14,7 +15,7 @@ const UpdateProduct = () => {
 
   useEffect(() => {
     axios
-      .get(`https://loopmarket-backend1.onrender.com/products/${id}`)
+      .get(`${API}/products/${id}`)
       .then((res) => {
         setTitle(res.data.title);
         setDescription(res.data.description);
@@ -28,7 +29,7 @@ const UpdateProduct = () => {
     e.preventDefault();
 
     try {
-      await axios.put(`https://loopmarket-backend1.onrender.com/products/${id}`, {
+      await axios.put(`${API}/products/${id}`, {
         title,
         description,
         price,

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import API from "../api";
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -28,29 +29,29 @@ const AdminPanel = () => {
 
   // 📂 CATEGORIES
   const deleteCategory = async (id) => {
-    await axios.delete(`https://loopmarket-backend1.onrender.com/categories/${id}`);
+    await axios.delete(`${API}/categories/${id}`);
     fetchCategories();
   };
 
   // 👥 USERS
   const fetchUsers = async () => {
-    const res = await axios.get("https://loopmarket-backend1.onrender.com/users");
+    const res = await axios.get(`${API}/users`);
     setUsers(res.data);
   };
 
   const deleteUser = async (id) => {
-    await axios.delete(`https://loopmarket-backend1.onrender.com/users/${id}`);
+    await axios.delete(`${API}/users/${id}`);
     fetchUsers();
   };
 
   // 🛍️ PRODUCTS
   const fetchProducts = async () => {
-    const res = await axios.get("https://loopmarket-backend1.onrender.com/products");
+    const res = await axios.get(`${API}/products`);
     setProducts(res.data);
   };
 
   const deleteProduct = async (id) => {
-    await axios.delete(`https://loopmarket-backend1.onrender.com/products/${id}`);
+    await axios.delete(`${API}/products/${id}`);
     fetchProducts();
   };
 
