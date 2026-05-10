@@ -6,7 +6,7 @@ const Profile = () => {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
-  const userId = 1; // ⚠️ later replace with logged user
+  const userId = JSON.parse(localStorage.getItem("user")).id; // ⚠️ later replace with logged user
 
   useEffect(() => {
     fetchUser();
@@ -14,7 +14,7 @@ const Profile = () => {
 
   const fetchUser = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/users/${userId}`);
+      const res = await axios.get(`https://loopmarket-backend1.onrender.com/users/${userId}`);
       setUser(res.data);
     } catch (err) {
       console.error(err);

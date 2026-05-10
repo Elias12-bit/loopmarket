@@ -23,7 +23,7 @@ const CreateProduct = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/categories");
+      const res = await axios.get("https://loopmarket-backend1.onrender.com/categories");
       setCategories(res.data);
     } catch (err) {
       console.error(err);
@@ -36,14 +36,14 @@ const CreateProduct = () => {
 
     try {
       // 1️⃣ create location (FIXED using locationText)
-      const locRes = await axios.post("http://localhost:5000/locations", {
+      const locRes = await axios.post("https://loopmarket-backend1.onrender.com/locations", {
         name: locationText,
       });
 
       const location_id = locRes.data.location_id;
 
       // 2️⃣ create product
-      await axios.post("http://localhost:5000/products", {
+      await axios.post("https://loopmarket-backend1.onrender.com/products", {
         title,
         description,
         price,

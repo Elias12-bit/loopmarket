@@ -28,29 +28,29 @@ const AdminPanel = () => {
 
   // 📂 CATEGORIES
   const deleteCategory = async (id) => {
-    await axios.delete(`http://localhost:5000/categories/${id}`);
+    await axios.delete(`https://loopmarket-backend1.onrender.com/categories/${id}`);
     fetchCategories();
   };
 
   // 👥 USERS
   const fetchUsers = async () => {
-    const res = await axios.get("http://localhost:5000/users");
+    const res = await axios.get("https://loopmarket-backend1.onrender.com/users");
     setUsers(res.data);
   };
 
   const deleteUser = async (id) => {
-    await axios.delete(`http://localhost:5000/users/${id}`);
+    await axios.delete(`https://loopmarket-backend1.onrender.com/users/${id}`);
     fetchUsers();
   };
 
   // 🛍️ PRODUCTS
   const fetchProducts = async () => {
-    const res = await axios.get("http://localhost:5000/products");
+    const res = await axios.get("https://loopmarket-backend1.onrender.com/products");
     setProducts(res.data);
   };
 
   const deleteProduct = async (id) => {
-    await axios.delete(`http://localhost:5000/products/${id}`);
+    await axios.delete(`https://loopmarket-backend1.onrender.com/products/${id}`);
     fetchProducts();
   };
 

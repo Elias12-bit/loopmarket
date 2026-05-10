@@ -17,12 +17,12 @@ const ProductDetails = () => {
 
   const fetchProduct = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/products/${id}`);
+      const res = await axios.get(`https://loopmarket-backend1.onrender.com/products/${id}`);
       setProduct(res.data);
 
       // fetch seller info
       const userRes = await axios.get(
-        `http://localhost:5000/users/${res.data.user_id}`
+        `https://loopmarket-backend1.onrender.com/users/${res.data.user_id}`
       );
       setSeller(userRes.data);
     } catch (err) {
@@ -76,7 +76,7 @@ const ProductDetails = () => {
       <button
         onClick={async () => {
           try {
-            await axios.post("http://localhost:5000/wishlist", {
+            await axios.post("https://loopmarket-backend1.onrender.com/wishlist", {
               user_id: user.id,
               product_id: product.id,
             });

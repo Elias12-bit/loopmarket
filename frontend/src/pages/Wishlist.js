@@ -4,7 +4,7 @@ import ProductCard from "../components/ProductCard";
 
 const Wishlist = () => {
   const [products, setProducts] = useState([]);
-  const userId = 1; // ⚠️ replace later
+  const userId = JSON.parse(localStorage.getItem("user")).id; // ⚠️ replace later
 
   useEffect(() => {
     fetchWishlist();
@@ -12,7 +12,7 @@ const Wishlist = () => {
 
   const fetchWishlist = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/wishlist/${userId}`);
+      const res = await axios.get(`https://loopmarket-backend1.onrender.com/wishlist/${userId}`);
       setProducts(res.data);
     } catch (err) {
       console.error(err);
@@ -21,7 +21,7 @@ const Wishlist = () => {
 
   const removeFromWishlist = async (productId) => {
     try {
-      await axios.delete("http://localhost:5000/wishlist", {
+      await axios.delete("https://loopmarket-backend1.onrender.com/wishlist", {
         data: {
           user_id: userId,
           product_id: productId,

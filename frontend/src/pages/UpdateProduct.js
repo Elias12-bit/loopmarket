@@ -14,7 +14,7 @@ const UpdateProduct = () => {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:5000/products/${id}`)
+      .get(`https://loopmarket-backend1.onrender.com/products/${id}`)
       .then((res) => {
         setTitle(res.data.title);
         setDescription(res.data.description);
@@ -28,7 +28,7 @@ const UpdateProduct = () => {
     e.preventDefault();
 
     try {
-      await axios.put(`http://localhost:5000/products/${id}`, {
+      await axios.put(`https://loopmarket-backend1.onrender.com/products/${id}`, {
         title,
         description,
         price,

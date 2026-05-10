@@ -22,7 +22,7 @@ const EditProfile = () => {
 
   const fetchUser = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/users/${userId}`);
+      const res = await axios.get(`https://loopmarket-backend1.onrender.com/users/${userId}`);
       setForm(res.data);
     } catch (err) {
       console.error(err);
@@ -38,7 +38,7 @@ const EditProfile = () => {
 
   const handleSave = async () => {
     try {
-      await axios.put(`http://localhost:5000/users/${userId}`, form);
+      await axios.put(`https://loopmarket-backend1.onrender.com/users/${userId}`, form);
       navigate("/profile");
     } catch (err) {
       console.error(err);

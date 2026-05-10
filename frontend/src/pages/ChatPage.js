@@ -16,7 +16,7 @@ const ChatPage = () => {
   const fetchConversations = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:5000/conversations/${currentUserId}`
+        `https://loopmarket-backend1.onrender.com/conversations/${currentUserId}`
       );
       setConversations(res.data);
     } catch (err) {
@@ -27,7 +27,7 @@ const ChatPage = () => {
   const fetchMessages = async (userId) => {
     try {
       const res = await axios.get(
-        `http://localhost:5000/messages/${currentUserId}/${userId}`
+        `https://loopmarket-backend1.onrender.com/messages/${currentUserId}/${userId}`
       );
       setMessages(res.data);
     } catch (err) {
@@ -44,7 +44,7 @@ const ChatPage = () => {
     if (!text.trim()) return;
 
     try {
-      await axios.post("http://localhost:5000/messages", {
+      await axios.post("https://loopmarket-backend1.onrender.com/messages", {
         sender_id: currentUserId,
         receiver_id: selectedUser.id,
         message: text,

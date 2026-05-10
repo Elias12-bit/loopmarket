@@ -24,7 +24,7 @@ const Signup = () => {
     e.preventDefault();
 
     try {
-      await axios.post("http://localhost:5000/signup", form);
+      await axios.post("https://loopmarket-backend1.onrender.com/signup", form);
 
       alert("Account created successfully!");
 

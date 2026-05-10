@@ -18,7 +18,7 @@ const Home = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/products");
+      const res = await axios.get("https://loopmarket-backend1.onrender.com/products");
       setProducts(res.data);
     } catch (err) {
       console.log(err);
@@ -27,7 +27,7 @@ const Home = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/categories");
+      const res = await axios.get("https://loopmarket-backend1.onrender.com/categories");
       setCategories(res.data);
     } catch (err) {
       console.log(err);

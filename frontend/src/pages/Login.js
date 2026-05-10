@@ -23,7 +23,7 @@ const Login = () => {
   e.preventDefault();
 
   try {
-    const res = await axios.post("http://localhost:5000/login", form);
+    const res = await axios.post("https://loopmarket-backend1.onrender.com/login", form);
 
     // ✅ SAVE USER IN LOCAL STORAGE (HERE)
     localStorage.setItem("user", JSON.stringify(res.data));
