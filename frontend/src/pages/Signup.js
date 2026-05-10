@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
+import API from "../api";
+
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -23,6 +25,7 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    
     try {
       await axios.post(`${API}/signup`, form);
 

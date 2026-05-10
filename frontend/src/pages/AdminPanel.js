@@ -1,25 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import API from "../api";
 
 const AdminPanel = () => {
-  const navigate = useNavigate();
-
   const [categories, setCategories] = useState([]);
   const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
 
   const [newCategory, setNewCategory] = useState("");
+  const [error, setError] = useState("");
 
-  // 🔐 PROTECTION (IMPORTANT)
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-
-    if (!user || user.role !== "admin") {
-      navigate("/");
-    }
-  }, [navigate]);
+  const user = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
     fetchCategories();
@@ -27,50 +18,147 @@ const AdminPanel = () => {
     fetchProducts();
   }, []);
 
-  // 📂 CATEGORIES
+  // =========================
+  // FETCH CATEGORIES
+  // =========================
+  const fetchCategories = async () => {
+    try {
+      const res = await axios.get(`${API}/categories`);
+      setCategories(res.data);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load categories");
+    }
+  };
+
+  // =========================
+  // ADD CATEGORY
+  // =========================
+  const addCategory = async () => {
+    if (!newCategory.trim()) return;
+
+    try {
+      await axios.post(
+        `${API}/categories`,
+        { name: newCategory },
+        {
+          headers: {
+            userid: user?.id,
+          },
+        }
+      );
+
+      setNewCategory("");
+      fetchCategories();
+    } catch (err) {
+      console.error(err);
+      setError("Failed to add category");
+    }
+  };
+
+  // =========================
+  // DELETE CATEGORY
+  // =========================
   const deleteCategory = async (id) => {
-    await axios.delete(`${API}/categories/${id}`);
-    fetchCategories();
+    try {
+      await axios.delete(`${API}/categories/${id}`, {
+        headers: {
+          userid: user?.id,
+        },
+      });
+
+      fetchCategories();
+    } catch (err) {
+      console.error(err);
+      setError("Failed to delete category");
+    }
   };
 
-  // 👥 USERS
+  // =========================
+  // FETCH USERS
+  // =========================
   const fetchUsers = async () => {
-    const res = await axios.get(`${API}/users`);
-    setUsers(res.data);
+    try {
+      const res = await axios.get(`${API}/users`, {
+        headers: {
+          userid: user?.id,
+        },
+      });
+
+      setUsers(res.data);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load users");
+    }
   };
 
+  // =========================
+  // DELETE USER
+  // =========================
   const deleteUser = async (id) => {
-    await axios.delete(`${API}/users/${id}`);
-    fetchUsers();
+    try {
+      await axios.delete(`${API}/users/${id}`, {
+        headers: {
+          userid: user?.id,
+        },
+      });
+
+      fetchUsers();
+    } catch (err) {
+      console.error(err);
+      setError("Failed to delete user");
+    }
   };
 
-  // 🛍️ PRODUCTS
+  // =========================
+  // FETCH PRODUCTS
+  // =========================
   const fetchProducts = async () => {
-    const res = await axios.get(`${API}/products`);
-    setProducts(res.data);
+    try {
+      const res = await axios.get(`${API}/products`);
+      setProducts(res.data);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load products");
+    }
   };
 
+  // =========================
+  // DELETE PRODUCT
+  // =========================
   const deleteProduct = async (id) => {
-    await axios.delete(`${API}/products/${id}`);
-    fetchProducts();
+    try {
+      await axios.delete(`${API}/products/${id}`, {
+        headers: {
+          userid: user?.id,
+        },
+      });
+
+      fetchProducts();
+    } catch (err) {
+      console.error(err);
+      setError("Failed to delete product");
+    }
   };
 
   return (
-    <div className="admin-container">
-
+    <div className="admin-container" style={{ padding: "20px" }}>
       <h1>Admin Panel</h1>
 
-      {/* 📂 ADD CATEGORY */}
-      <section>
-        <h2>Categories</h2>
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
+      {/* CATEGORY MANAGEMENT */}
+      <section style={{ marginBottom: "30px" }}>
+        <h2>Manage Categories</h2>
 
         <input
-          placeholder="New category"
+          type="text"
+          placeholder="Enter category name"
           value={newCategory}
           onChange={(e) => setNewCategory(e.target.value)}
         />
 
-        <button onClick={addCategory}>Add</button>
+        <button onClick={addCategory}>Add Category</button>
 
         <ul>
           {categories.map((cat) => (
@@ -84,38 +172,45 @@ const AdminPanel = () => {
         </ul>
       </section>
 
-      {/* 👥 USERS */}
-      <section>
-        <h2>Users</h2>
+      {/* USER MANAGEMENT */}
+      <section style={{ marginBottom: "30px" }}>
+        <h2>Manage Users</h2>
 
-        <ul>
-          {users.map((user) => (
-            <li key={user.id}>
-              {user.name} - {user.email}
-              <button onClick={() => deleteUser(user.id)}>
-                Delete
-              </button>
-            </li>
-          ))}
-        </ul>
+        {users.length === 0 ? (
+          <p>No users found</p>
+        ) : (
+          <ul>
+            {users.map((u) => (
+              <li key={u.id}>
+                {u.name || u.username} - {u.email}
+                <button onClick={() => deleteUser(u.id)}>
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
-      {/* 🛍️ PRODUCTS */}
+      {/* LISTING MANAGEMENT */}
       <section>
-        <h2>Listings</h2>
+        <h2>Manage Listings</h2>
 
-        <ul>
-          {products.map((p) => (
-            <li key={p.id}>
-              {p.title} - ${p.price}
-              <button onClick={() => deleteProduct(p.id)}>
-                Delete
-              </button>
-            </li>
-          ))}
-        </ul>
+        {products.length === 0 ? (
+          <p>No listings found</p>
+        ) : (
+          <ul>
+            {products.map((product) => (
+              <li key={product.id}>
+                {product.title} - ${product.price}
+                <button onClick={() => deleteProduct(product.id)}>
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
-
     </div>
   );
 };
