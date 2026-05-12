@@ -4,35 +4,45 @@ const db = require("../db");
 
 // SIGNUP
 router.post("/signup", (req, res) => {
-  const { name, email, password } = req.body;
+  const { username, email, password } = req.body;
 
-  db.query(
-    "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
-    [name, email, password],
-    (err) => {
-      if (err) return res.status(500).send(err);
-      res.json({ message: "User created" });
+  const sql = `
+    INSERT INTO users (username, name, email, password, role)
+    VALUES (?, ?, ?, ?, 'user')
+  `;
+
+  db.query(sql, [username, username, email, password], (err) => {
+    if (err) {
+      console.log("Signup error:", err);
+      return res.status(500).json({ message: "Signup failed", error: err });
     }
-  );
+
+    res.json({ message: "User created successfully" });
+  });
 });
 
 // LOGIN
 router.post("/login", (req, res) => {
   const { email, password } = req.body;
 
-  db.query(
-    "SELECT * FROM users WHERE email=? AND password=?",
-    [email, password],
-    (err, result) => {
-      if (err) return res.status(500).send(err);
+  const sql = `
+    SELECT id, username, name, email, role, image, image_url, description, phone
+    FROM users
+    WHERE email = ? AND password = ?
+  `;
 
-      if (result.length === 0) {
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
-
-      res.json(result[0]);
+  db.query(sql, [email, password], (err, result) => {
+    if (err) {
+      console.log("Login error:", err);
+      return res.status(500).json({ message: "Login failed", error: err });
     }
-  );
+
+    if (result.length === 0) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    res.json(result[0]);
+  });
 });
 
 module.exports = router;

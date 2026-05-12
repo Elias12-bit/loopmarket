@@ -24,7 +24,7 @@ const Login = () => {
   e.preventDefault();
 
   try {
-    const res = await axios.post(`${API}/login`, form);
+    const res = await axios.post(`${API}/auth/login`, form);
 
     // ✅ SAVE USER IN LOCAL STORAGE (HERE)
     localStorage.setItem("user", JSON.stringify(res.data));

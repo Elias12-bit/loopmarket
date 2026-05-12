@@ -27,7 +27,7 @@ const Signup = () => {
 
     
     try {
-      await axios.post(`${API}/signup`, form);
+      await axios.post(`${API}/auth/signup`, form);
 
       alert("Account created successfully!");
 
