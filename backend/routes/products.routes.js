@@ -108,6 +108,10 @@ router.post("/", (req, res) => {
     location_id,
   } = req.body;
 
+  if (!user_id) {
+    return res.status(400).json({ message: "user_id is required" });
+  }
+
   const sql = `
     INSERT INTO products 
     (title, description, price, image_url, user_id, category_id, location_id)
@@ -171,7 +175,7 @@ router.put("/:id", (req, res) => {
 });
 
 // DELETE PRODUCT
-// Allows the owner of the ad OR admin to delete
+// Allows owner OR admin to delete
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
   const userId = req.headers.userid;
@@ -180,7 +184,6 @@ router.delete("/:id", (req, res) => {
     return res.status(401).json({ message: "User ID is required" });
   }
 
-  // First check the logged-in user's role
   const userSql = "SELECT role FROM users WHERE id = ?";
 
   db.query(userSql, [userId], (userErr, userResult) => {
@@ -199,11 +202,9 @@ router.delete("/:id", (req, res) => {
     let values;
 
     if (role === "admin") {
-      // Admin can delete any product
       deleteSql = "DELETE FROM products WHERE id = ?";
       values = [id];
     } else {
-      // Normal user can delete only his own product
       deleteSql = "DELETE FROM products WHERE id = ? AND user_id = ?";
       values = [id, userId];
     }

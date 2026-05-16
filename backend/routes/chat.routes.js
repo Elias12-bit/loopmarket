@@ -10,6 +10,7 @@ router.get("/conversations/:userId", (req, res) => {
     SELECT DISTINCT 
       u.id,
       u.username,
+      u.email,
       u.image,
       u.image_url
     FROM users u
@@ -21,7 +22,11 @@ router.get("/conversations/:userId", (req, res) => {
   `;
 
   db.query(sql, [userId, userId, userId], (err, result) => {
-    if (err) return res.status(500).send(err);
+    if (err) {
+      console.log("Get conversations error:", err);
+      return res.status(500).json({ message: "Failed to get conversations" });
+    }
+
     res.json(result);
   });
 });
@@ -40,7 +45,11 @@ router.get("/messages/:user1/:user2", (req, res) => {
   `;
 
   db.query(sql, [user1, user2, user2, user1], (err, result) => {
-    if (err) return res.status(500).send(err);
+    if (err) {
+      console.log("Get messages error:", err);
+      return res.status(500).json({ message: "Failed to get messages" });
+    }
+
     res.json(result);
   });
 });
@@ -55,7 +64,11 @@ router.post("/messages", (req, res) => {
   `;
 
   db.query(sql, [sender_id, receiver_id, message], (err) => {
-    if (err) return res.status(500).send(err);
+    if (err) {
+      console.log("Send message error:", err);
+      return res.status(500).json({ message: "Failed to send message" });
+    }
+
     res.json({ message: "Message sent" });
   });
 });

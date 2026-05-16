@@ -57,6 +57,11 @@ const ProductDetails = () => {
       return;
     }
 
+    if (!product.user_id) {
+      alert("Seller not available for this product.");
+      return;
+    }
+
     if (user.id === product.user_id) {
       alert("You cannot chat with yourself.");
       return;
@@ -86,7 +91,6 @@ const ProductDetails = () => {
     <div className="product-details-container" style={{ padding: "20px" }}>
       <button onClick={() => navigate(-1)}>⬅ Back</button>
 
-      {/* PRODUCT DETAILS */}
       <div style={{ marginTop: "20px" }}>
         <h2>{product.title}</h2>
 
@@ -122,7 +126,6 @@ const ProductDetails = () => {
         </p>
       </div>
 
-      {/* SELLER INFO */}
       <div
         className="seller-info"
         style={{
@@ -169,7 +172,6 @@ const ProductDetails = () => {
         )}
       </div>
 
-      {/* ACTION BUTTONS */}
       <div
         style={{
           marginTop: "25px",

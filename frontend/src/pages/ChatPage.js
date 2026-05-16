@@ -36,9 +36,8 @@ const ChatPage = () => {
 
   const openChatWithSeller = async (sellerId) => {
     try {
-      const res = await axios.get(`${API}/users/${sellerId}`);
-
-      setSelectedUser(res.data);
+      const sellerRes = await axios.get(`${API}/users/${sellerId}`);
+      setSelectedUser(sellerRes.data);
 
       const messagesRes = await axios.get(
         `${API}/chat/messages/${currentUserId}/${sellerId}`
@@ -115,7 +114,6 @@ const ChatPage = () => {
         padding: "20px",
       }}
     >
-      {/* LEFT SIDE */}
       <div
         style={{
           width: "30%",
@@ -164,7 +162,6 @@ const ChatPage = () => {
         )}
       </div>
 
-      {/* RIGHT SIDE */}
       <div
         style={{
           width: "70%",
