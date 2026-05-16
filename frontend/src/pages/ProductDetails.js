@@ -57,8 +57,15 @@ const ProductDetails = () => {
       return;
     }
 
+    if (user.id === product.user_id) {
+      alert("You cannot chat with yourself.");
+      return;
+    }
+
     navigate("/chat", {
-      state: { receiverId: product.user_id },
+      state: {
+        receiverId: product.user_id,
+      },
     });
   };
 
@@ -142,7 +149,15 @@ const ProductDetails = () => {
             />
 
             <p>
-              <strong>Name:</strong> {seller.username || seller.name}
+              <strong>Name:</strong> {seller.username || "Unknown seller"}
+            </p>
+
+            <p>
+              <strong>Email:</strong> {seller.email || "Not available"}
+            </p>
+
+            <p>
+              <strong>Phone:</strong> {seller.phone || "Not available"}
             </p>
 
             <p>
@@ -155,7 +170,14 @@ const ProductDetails = () => {
       </div>
 
       {/* ACTION BUTTONS */}
-      <div style={{ marginTop: "25px", display: "flex", gap: "10px" }}>
+      <div
+        style={{
+          marginTop: "25px",
+          display: "flex",
+          gap: "10px",
+          flexWrap: "wrap",
+        }}
+      >
         {user ? (
           <>
             <button onClick={addToWishlist}>❤️ Add to Wishlist</button>

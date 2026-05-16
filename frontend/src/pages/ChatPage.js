@@ -8,26 +8,23 @@ const ChatPage = () => {
   const location = useLocation();
 
   const user = JSON.parse(localStorage.getItem("user"));
+  const currentUserId = user?.id;
 
   const [conversations, setConversations] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
 
-  const currentUserId = user?.id;
-
   useEffect(() => {
     if (user) {
       fetchConversations();
 
-      // If user came from ProductDetails.js with seller id
       if (location.state?.receiverId) {
         openChatWithSeller(location.state.receiverId);
       }
     }
-  }, []);
+  }, [location.state]);
 
-  // GET PEOPLE I HAVE CONVERSATIONS WITH
   const fetchConversations = async () => {
     try {
       const res = await axios.get(`${API}/chat/conversations/${currentUserId}`);
@@ -37,36 +34,36 @@ const ChatPage = () => {
     }
   };
 
-  // OPEN CHAT IF COMING FROM PRODUCT DETAILS
   const openChatWithSeller = async (sellerId) => {
     try {
       const res = await axios.get(`${API}/users/${sellerId}`);
+
       setSelectedUser(res.data);
-      fetchMessages(sellerId);
+
+      const messagesRes = await axios.get(
+        `${API}/chat/messages/${currentUserId}/${sellerId}`
+      );
+
+      setMessages(messagesRes.data);
     } catch (err) {
       console.error(err);
     }
   };
 
-  // GET MESSAGES BETWEEN CURRENT USER AND SELECTED USER
-  const fetchMessages = async (userId) => {
+  const selectUser = async (person) => {
+    setSelectedUser(person);
+
     try {
       const res = await axios.get(
-        `${API}/chat/messages/${currentUserId}/${userId}`
+        `${API}/chat/messages/${currentUserId}/${person.id}`
       );
+
       setMessages(res.data);
     } catch (err) {
       console.error(err);
     }
   };
 
-  // WHEN CLICKING A PERSON FROM CHAT LIST
-  const selectUser = (person) => {
-    setSelectedUser(person);
-    fetchMessages(person.id);
-  };
-
-  // SEND MESSAGE
   const sendMessage = async () => {
     if (!text.trim()) return;
     if (!selectedUser) return;
@@ -79,23 +76,25 @@ const ChatPage = () => {
       });
 
       setText("");
-      fetchMessages(selectedUser.id);
+
+      const res = await axios.get(
+        `${API}/chat/messages/${currentUserId}/${selectedUser.id}`
+      );
+
+      setMessages(res.data);
       fetchConversations();
     } catch (err) {
       console.error(err);
     }
   };
 
-  // GUEST VIEW
   if (!user) {
     return (
       <div style={{ padding: "20px" }}>
         <h2>Chat</h2>
         <p>You need to login to chat with sellers.</p>
 
-        <button onClick={() => navigate("/login")}>
-          Login
-        </button>
+        <button onClick={() => navigate("/login")}>Login</button>
 
         <button
           onClick={() => navigate("/signup")}
@@ -116,9 +115,8 @@ const ChatPage = () => {
         padding: "20px",
       }}
     >
-      {/* LEFT SIDE - CONVERSATION LIST */}
+      {/* LEFT SIDE */}
       <div
-        className="conversation-list"
         style={{
           width: "30%",
           borderRight: "1px solid #ccc",
@@ -146,7 +144,11 @@ const ChatPage = () => {
               }}
             >
               <img
-                src={person.image || person.image_url || "/images/default-user.png"}
+                src={
+                  person.image ||
+                  person.image_url ||
+                  "/images/default-user.png"
+                }
                 alt="user"
                 style={{
                   width: "45px",
@@ -156,17 +158,14 @@ const ChatPage = () => {
                 }}
               />
 
-              <div>
-                <strong>{person.username || person.name}</strong>
-              </div>
+              <strong>{person.username || person.name}</strong>
             </div>
           ))
         )}
       </div>
 
-      {/* RIGHT SIDE - CHAT BOX */}
+      {/* RIGHT SIDE */}
       <div
-        className="chat-box-container"
         style={{
           width: "70%",
           paddingLeft: "20px",
@@ -175,17 +174,13 @@ const ChatPage = () => {
         {!selectedUser ? (
           <div>
             <h2>Select a conversation</h2>
-            <p>Choose someone from the left to start chatting.</p>
+            <p>Choose someone from the left or chat with a seller.</p>
           </div>
         ) : (
           <>
-            <h2>
-              Chat with {selectedUser.username || selectedUser.name}
-            </h2>
+            <h2>Chat with {selectedUser.username || selectedUser.name}</h2>
 
-            {/* MESSAGES */}
             <div
-              className="messages-box"
               style={{
                 height: "60vh",
                 overflowY: "auto",
@@ -195,7 +190,7 @@ const ChatPage = () => {
               }}
             >
               {messages.length === 0 ? (
-                <p>No messages yet</p>
+                <p>No messages yet. Start the conversation.</p>
               ) : (
                 messages.map((msg) => (
                   <div
@@ -224,14 +219,7 @@ const ChatPage = () => {
               )}
             </div>
 
-            {/* SEND MESSAGE */}
-            <div
-              className="chat-input"
-              style={{
-                display: "flex",
-                gap: "10px",
-              }}
-            >
+            <div style={{ display: "flex", gap: "10px" }}>
               <input
                 type="text"
                 placeholder="Type a message..."
@@ -248,9 +236,7 @@ const ChatPage = () => {
                 }}
               />
 
-              <button onClick={sendMessage}>
-                Send
-              </button>
+              <button onClick={sendMessage}>Send</button>
             </div>
           </>
         )}

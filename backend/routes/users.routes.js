@@ -2,47 +2,141 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 
-const isAdmin = require("../middleware/admin.middleware");
+// GET ALL USERS
+router.get("/", (req, res) => {
+  const sql = `
+    SELECT 
+      id,
+      username,
+      email,
+      phone,
+      address,
+      image_url,
+      image,
+      description,
+      gender,
+      dob,
+      status,
+      role
+    FROM users
+  `;
 
-// GET ALL USERS (admin only)
-router.get("/", isAdmin, (req, res) => {
-  db.query("SELECT * FROM users", (err, result) => {
-    if (err) return res.status(500).send(err);
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.log("Get users error:", err);
+      return res.status(500).json({ message: "Failed to get users" });
+    }
+
     res.json(result);
   });
 });
 
-// GET ONE USER
+// GET ONE USER BY ID
 router.get("/:id", (req, res) => {
-  db.query(
-    "SELECT * FROM users WHERE id=?",
-    [req.params.id],
-    (err, result) => {
-      if (err) return res.status(500).send(err);
-      res.json(result[0]);
+  const { id } = req.params;
+
+  const sql = `
+    SELECT 
+      id,
+      username,
+      email,
+      phone,
+      address,
+      image_url,
+      image,
+      description,
+      gender,
+      dob,
+      status,
+      role
+    FROM users
+    WHERE id = ?
+  `;
+
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.log("Get user error:", err);
+      return res.status(500).json({ message: "Failed to get user" });
     }
-  );
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(result[0]);
+  });
 });
 
-// UPDATE USER
+// UPDATE USER PROFILE
 router.put("/:id", (req, res) => {
-  const { name, image, description, gender, dob, phone, email } = req.body;
+  const { id } = req.params;
+
+  const {
+    username,
+    email,
+    phone,
+    address,
+    image_url,
+    image,
+    description,
+    gender,
+    dob,
+    status,
+  } = req.body;
+
+  const sql = `
+    UPDATE users
+    SET 
+      username = ?,
+      email = ?,
+      phone = ?,
+      address = ?,
+      image_url = ?,
+      image = ?,
+      description = ?,
+      gender = ?,
+      dob = ?,
+      status = ?
+    WHERE id = ?
+  `;
 
   db.query(
-    `UPDATE users SET name=?, image=?, description=?, gender=?, dob=?, phone=?, email=? WHERE id=?`,
-    [name, image, description, gender, dob, phone, email, req.params.id],
+    sql,
+    [
+      username,
+      email,
+      phone,
+      address,
+      image_url,
+      image,
+      description,
+      gender,
+      dob,
+      status,
+      id,
+    ],
     (err) => {
-      if (err) return res.status(500).send(err);
-      res.json({ message: "Updated" });
+      if (err) {
+        console.log("Update user error:", err);
+        return res.status(500).json({ message: "Failed to update user" });
+      }
+
+      res.json({ message: "User updated successfully" });
     }
   );
 });
 
-// DELETE USER (admin only)
-router.delete("/:id", isAdmin, (req, res) => {
-  db.query("DELETE FROM users WHERE id=?", [req.params.id], (err) => {
-    if (err) return res.status(500).send(err);
-    res.json({ message: "Deleted" });
+// DELETE USER
+router.delete("/:id", (req, res) => {
+  const { id } = req.params;
+
+  db.query("DELETE FROM users WHERE id = ?", [id], (err) => {
+    if (err) {
+      console.log("Delete user error:", err);
+      return res.status(500).json({ message: "Failed to delete user" });
+    }
+
+    res.json({ message: "User deleted successfully" });
   });
 });
 
