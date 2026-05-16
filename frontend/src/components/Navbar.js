@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -13,64 +13,70 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem("user");
     setUser(null);
-    navigate("/login");
+    navigate("/");
+    window.location.reload();
   };
 
   return (
     <nav style={styles.navbar}>
-
-      {/* 🏠 LOGO */}
+      {/* LOGO */}
       <div style={styles.logo} onClick={() => navigate("/")}>
-        Marketplace
+        Loop Market
       </div>
 
-      {/* 🔗 LINKS */}
+      {/* LINKS */}
       <div style={styles.links}>
+        <Link style={styles.link} to="/">
+          Home
+        </Link>
 
-        <Link to="/">Home</Link>
+        <Link style={styles.link} to="/profile">
+          Profile
+        </Link>
 
         {user && (
           <>
-            <Link to="/profile">Profile</Link>
-            <Link to="/chat">Chat</Link>
-            <Link to="/wishlist">Wishlist</Link>
+            <Link style={styles.link} to="/chat">
+              Chat
+            </Link>
+
+            <Link style={styles.link} to="/wishlist">
+              Wishlist
+            </Link>
           </>
         )}
 
-        {/* 🛠️ ADMIN LINK */}
         {user?.role === "admin" && (
-          <Link to="/admin">Admin</Link>
+          <Link style={styles.link} to="/admin">
+            Admin
+          </Link>
         )}
-
       </div>
 
-      {/* 👤 AUTH BUTTONS */}
+      {/* AUTH AREA */}
       <div style={styles.auth}>
-
         {!user ? (
           <>
-            <button onClick={() => navigate("/login")}>
+            <button style={styles.button} onClick={() => navigate("/login")}>
               Login
             </button>
 
-            <button onClick={() => navigate("/signup")}>
+            <button style={styles.button} onClick={() => navigate("/signup")}>
               Sign Up
             </button>
           </>
         ) : (
           <>
-            <span style={{ marginRight: "10px" }}>
-              👤 {user.name}
+            <span style={styles.username}>
+              👤 {user.username || user.name}
             </span>
 
-            <button onClick={handleLogout}>
+            <button style={styles.logoutButton} onClick={handleLogout}>
               Logout
             </button>
           </>
         )}
-
       </div>
-
     </nav>
   );
 };
@@ -80,26 +86,53 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "10px 20px",
+    padding: "12px 25px",
     backgroundColor: "#222",
     color: "white",
   },
 
   logo: {
-    fontSize: "20px",
+    fontSize: "22px",
     fontWeight: "bold",
     cursor: "pointer",
   },
 
   links: {
     display: "flex",
-    gap: "15px",
+    alignItems: "center",
+    gap: "18px",
+  },
+
+  link: {
+    color: "white",
+    textDecoration: "none",
+    fontSize: "16px",
   },
 
   auth: {
     display: "flex",
     alignItems: "center",
     gap: "10px",
+  },
+
+  username: {
+    marginRight: "10px",
+  },
+
+  button: {
+    padding: "7px 12px",
+    cursor: "pointer",
+    border: "none",
+    borderRadius: "5px",
+  },
+
+  logoutButton: {
+    padding: "7px 12px",
+    cursor: "pointer",
+    border: "none",
+    borderRadius: "5px",
+    backgroundColor: "red",
+    color: "white",
   },
 };
 

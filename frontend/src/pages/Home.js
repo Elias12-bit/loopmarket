@@ -7,16 +7,20 @@ import API from "../api";
 const Home = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
   const navigate = useNavigate();
+
+  const user = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
     fetchProducts();
     fetchCategories();
   }, []);
 
+  // GET PRODUCTS
   const fetchProducts = async () => {
     try {
       const res = await axios.get(`${API}/products`);
@@ -26,6 +30,7 @@ const Home = () => {
     }
   };
 
+  // GET CATEGORIES
   const fetchCategories = async () => {
     try {
       const res = await axios.get(`${API}/categories`);
@@ -35,79 +40,136 @@ const Home = () => {
     }
   };
 
-  // 🔎 FILTERING
-  const filteredProducts = products.filter((p) => {
+  // FILTER PRODUCTS
+  const filteredProducts = products.filter((product) => {
+    const matchSearch =
+      product.title &&
+      product.title.toLowerCase().includes(search.toLowerCase());
+
     const matchCategory =
       selectedCategory === "All" ||
-      p.category_name === selectedCategory;
+      product.category_name === selectedCategory;
 
-    const matchSearch =
-      p.title.toLowerCase().includes(search.toLowerCase());
-
-    return matchCategory && matchSearch;
+    return matchSearch && matchCategory;
   });
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>Marketplace</h2>
+    <div className="home-container" style={{ padding: "20px" }}>
+      <h2>Loop Market</h2>
 
-      {/* 🔎 SEARCH */}
-      <div style={{ textAlign: "center", marginBottom: "20px" }}>
+      {/* ADD PRODUCT BUTTON */}
+      <div style={{ textAlign: "right", marginBottom: "20px" }}>
+        {user ? (
+          <button onClick={() => navigate("/add-product")}>
+            + Add New Product
+          </button>
+        ) : (
+          <button onClick={() => navigate("/login")}>
+            Login to Add Product
+          </button>
+        )}
+      </div>
+
+      {/* SEARCH BAR */}
+      <div
+        className="search-bar"
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          marginBottom: "25px",
+        }}
+      >
         <input
           type="text"
           placeholder="Search products..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ padding: "10px", width: "50%" }}
+          style={{
+            width: "50%",
+            padding: "10px",
+            fontSize: "16px",
+          }}
         />
       </div>
 
-      {/* 📂 CATEGORIES */}
-      <div style={{ marginBottom: "20px" }}>
-        <button onClick={() => setSelectedCategory("All")}>All</button>
+      {/* CATEGORIES */}
+      <div
+        className="categories-container"
+        style={{
+          textAlign: "center",
+          marginBottom: "25px",
+        }}
+      >
+        <h3>Categories</h3>
 
-        {categories.map((cat) => (
+        <div className="categories-list">
           <button
-            key={cat.id}
-            onClick={() => setSelectedCategory(cat.name)}
-            style={{ marginLeft: "10px" }}
+            onClick={() => setSelectedCategory("All")}
+            style={{ margin: "5px" }}
           >
-            {cat.name}
+            All
           </button>
-        ))}
-      </div>
 
-      {/* ➕ ADD PRODUCT */}
-      <div style={{ textAlign: "right", marginBottom: "20px" }}>
-        <button onClick={() => navigate("/add-product")}>
-          Add New Product
-        </button>
-      </div>
-
-      {/* 🛍️ PRODUCTS */}
-      <div style={{ display: "flex", flexWrap: "wrap" }}>
-        {filteredProducts.map((product) => (
-          <div key={product.id} style={{ margin: "10px" }}>
-            <ProductCard
-              image={product.image_url}
-              title={product.title}
-              description={product.description}
-              price={product.price}
-            />
-
-            {/* 📍 LOCATION */}
-            <p>
-              📍 {product.street}, {product.city}, {product.governorate}
-            </p>
-
-            {/* 🔍 DETAILS */}
+          {categories.map((cat) => (
             <button
-              onClick={() => navigate(`/product/${product.id}`)}
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.name)}
+              style={{ margin: "5px" }}
             >
-              View Details
+              {cat.name}
             </button>
-          </div>
-        ))}
+          ))}
+        </div>
+      </div>
+
+      {/* PRODUCTS */}
+      <div
+        className="products-container"
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "20px",
+          justifyContent: "center",
+        }}
+      >
+        {filteredProducts.length === 0 ? (
+          <p>No products found</p>
+        ) : (
+          filteredProducts.map((product) => (
+            <div
+              key={product.id}
+              className="product-card-wrapper"
+              style={{
+                width: "260px",
+                border: "1px solid #ddd",
+                borderRadius: "10px",
+                padding: "10px",
+              }}
+            >
+              <ProductCard
+                image={product.image_url || "/images/default.jpg"}
+                title={product.title}
+                description={product.description}
+                price={product.price}
+              />
+
+              <p>
+                <strong>Category:</strong> {product.category_name}
+              </p>
+
+              <p>
+                <strong>Location:</strong>{" "}
+                {product.street && product.city && product.governorate
+                  ? `${product.street}, ${product.city}, ${product.governorate}`
+                  : "Not specified"}
+              </p>
+
+              <button onClick={() => navigate(`/product/${product.id}`)}>
+                View Details
+              </button>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

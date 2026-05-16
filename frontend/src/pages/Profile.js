@@ -4,36 +4,57 @@ import { useNavigate } from "react-router-dom";
 import API from "../api";
 
 const Profile = () => {
-  const [user, setUser] = useState(null);
+  const [userDetails, setUserDetails] = useState(null);
   const navigate = useNavigate();
 
-  const userId = JSON.parse(localStorage.getItem("user")).id; // ⚠️ later replace with logged user
+  const user = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
-    fetchUser();
+    if (user) {
+      fetchUser();
+    }
   }, []);
 
   const fetchUser = async () => {
     try {
-      const res = await axios.get(`${API}/users/${userId}`);
-      setUser(res.data);
+      const res = await axios.get(`${API}/users/${user.id}`);
+      setUserDetails(res.data);
     } catch (err) {
       console.error(err);
     }
   };
 
-  // 🔴 LOGOUT FUNCTION
   const handleLogout = () => {
-    localStorage.removeItem("user"); // remove stored user
-    navigate("/login"); // go to login page
+    localStorage.removeItem("user");
+    navigate("/");
+    window.location.reload();
   };
 
-  if (!user) return <p>Loading...</p>;
+  // GUEST PROFILE VIEW
+  if (!user) {
+    return (
+      <div className="profile-container" style={{ padding: "20px" }}>
+        <h2>Profile</h2>
+        <p>You are not logged in.</p>
+
+        <button onClick={() => navigate("/login")}>
+          Login
+        </button>
+
+        <button
+          onClick={() => navigate("/signup")}
+          style={{ marginLeft: "10px" }}
+        >
+          Create New Account
+        </button>
+      </div>
+    );
+  }
+
+  if (!userDetails) return <p>Loading...</p>;
 
   return (
-    <div className="profile-container">
-
-      {/* 👤 USER INFO */}
+    <div className="profile-container" style={{ padding: "20px" }}>
       <div
         style={{
           display: "flex",
@@ -43,7 +64,7 @@ const Profile = () => {
         }}
       >
         <img
-          src={user.image || "/images/default-user.png"}
+          src={userDetails.image || userDetails.image_url || "/images/default-user.png"}
           alt="profile"
           style={{
             width: "90px",
@@ -54,39 +75,37 @@ const Profile = () => {
         />
 
         <div>
-          <h2>{user.name}</h2>
+          <h2>{userDetails.username}</h2>
 
-          <button
-            onClick={() => navigate("/edit-profile")}
-            style={{ marginTop: "10px" }}
-          >
-            ✏️ View & Edit Profile
+          <button onClick={() => navigate("/edit-profile")}>
+            View & Edit Profile
           </button>
         </div>
       </div>
 
-      {/* ❤️ WISHLIST */}
       <div style={{ marginBottom: "20px" }}>
         <button onClick={() => navigate("/wishlist")}>
           ❤️ Wishlist
         </button>
       </div>
 
-      {/* 🔴 LOGOUT */}
-      <div>
-        <button
-          onClick={handleLogout}
-          style={{
-            backgroundColor: "red",
-            color: "white",
-            padding: "10px 20px",
-            cursor: "pointer",
-          }}
-        >
-          🚪 Logout
+      <div style={{ marginBottom: "20px" }}>
+        <button onClick={() => navigate("/chat")}>
+          💬 Chats
         </button>
       </div>
 
+      <button
+        onClick={handleLogout}
+        style={{
+          backgroundColor: "red",
+          color: "white",
+          padding: "10px 20px",
+          cursor: "pointer",
+        }}
+      >
+        Logout
+      </button>
     </div>
   );
 };

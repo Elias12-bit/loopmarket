@@ -2,32 +2,61 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 
-router.post("/messages", (req, res) => {
-  const { sender_id, receiver_id, message } = req.body;
+// GET PEOPLE I HAVE CONVERSATIONS WITH
+router.get("/conversations/:userId", (req, res) => {
+  const { userId } = req.params;
 
-  db.query(
-    "INSERT INTO messages (sender_id, receiver_id, message) VALUES (?, ?, ?)",
-    [sender_id, receiver_id, message],
-    (err) => {
-      if (err) return res.status(500).send(err);
-      res.json({ message: "Sent" });
-    }
-  );
+  const sql = `
+    SELECT DISTINCT 
+      u.id,
+      u.username,
+      u.image,
+      u.image_url
+    FROM users u
+    JOIN messages m
+      ON u.id = m.sender_id OR u.id = m.receiver_id
+    WHERE 
+      (m.sender_id = ? OR m.receiver_id = ?)
+      AND u.id != ?
+  `;
+
+  db.query(sql, [userId, userId, userId], (err, result) => {
+    if (err) return res.status(500).send(err);
+    res.json(result);
+  });
 });
 
+// GET MESSAGES BETWEEN TWO USERS
 router.get("/messages/:user1/:user2", (req, res) => {
   const { user1, user2 } = req.params;
 
   const sql = `
     SELECT * FROM messages
-    WHERE (sender_id=? AND receiver_id=?)
-       OR (sender_id=? AND receiver_id=?)
+    WHERE 
+      (sender_id = ? AND receiver_id = ?)
+      OR
+      (sender_id = ? AND receiver_id = ?)
     ORDER BY created_at ASC
   `;
 
   db.query(sql, [user1, user2, user2, user1], (err, result) => {
     if (err) return res.status(500).send(err);
     res.json(result);
+  });
+});
+
+// SEND MESSAGE
+router.post("/messages", (req, res) => {
+  const { sender_id, receiver_id, message } = req.body;
+
+  const sql = `
+    INSERT INTO messages (sender_id, receiver_id, message)
+    VALUES (?, ?, ?)
+  `;
+
+  db.query(sql, [sender_id, receiver_id, message], (err) => {
+    if (err) return res.status(500).send(err);
+    res.json({ message: "Message sent" });
   });
 });
 

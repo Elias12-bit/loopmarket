@@ -9,6 +9,7 @@ const ProductDetails = () => {
 
   const [product, setProduct] = useState(null);
   const [seller, setSeller] = useState(null);
+  const [error, setError] = useState(false);
 
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -21,86 +22,157 @@ const ProductDetails = () => {
       const res = await axios.get(`${API}/products/${id}`);
       setProduct(res.data);
 
-      // fetch seller info
-      const userRes = await axios.get(
-        `${API}/users/${res.data.user_id}`
-      );
-      setSeller(userRes.data);
+      if (res.data.user_id) {
+        const sellerRes = await axios.get(`${API}/users/${res.data.user_id}`);
+        setSeller(sellerRes.data);
+      }
     } catch (err) {
-      console.log(err);
+      console.error(err);
+      setError(true);
     }
   };
 
-  if (!product) return <p>Loading...</p>;
+  const addToWishlist = async () => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/wishlist`, {
+        user_id: user.id,
+        product_id: product.id,
+      });
+
+      alert("Product added to wishlist ❤️");
+    } catch (err) {
+      console.error(err);
+      alert("This product may already be in your wishlist");
+    }
+  };
+
+  const chatWithSeller = () => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    navigate("/chat", {
+      state: { receiverId: product.user_id },
+    });
+  };
+
+  if (error) {
+    return (
+      <div style={{ padding: "20px" }}>
+        <p style={{ color: "red" }}>Failed to load product details.</p>
+        <button onClick={() => navigate("/")}>Back Home</button>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return <p style={{ padding: "20px" }}>Loading...</p>;
+  }
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>{product.title}</h2>
+    <div className="product-details-container" style={{ padding: "20px" }}>
+      <button onClick={() => navigate(-1)}>⬅ Back</button>
 
-      <img
-        src={product.image_url || "/images/default.jpg"}
-        alt={product.title}
-        style={{ width: "300px", marginBottom: "20px" }}
-      />
+      {/* PRODUCT DETAILS */}
+      <div style={{ marginTop: "20px" }}>
+        <h2>{product.title}</h2>
 
-      <h3>${product.price}</h3>
+        <img
+          src={product.image_url || product.image || "/images/default.jpg"}
+          alt={product.title}
+          style={{
+            width: "350px",
+            maxWidth: "100%",
+            height: "250px",
+            objectFit: "cover",
+            borderRadius: "10px",
+            marginBottom: "20px",
+          }}
+        />
 
-      <p>{product.description}</p>
+        <h3>${product.price}</h3>
 
-      {/* 📂 CATEGORY */}
-      <p>Category: {product.category_name}</p>
+        <p>
+          <strong>Description:</strong> {product.description}
+        </p>
 
-      {/* 📍 LOCATION */}
-      <p>
-        Location: {product.street}, {product.city}, {product.governorate}
-      </p>
+        <p>
+          <strong>Category:</strong>{" "}
+          {product.category_name || product.category || "Not specified"}
+        </p>
 
-      {/* 👤 SELLER */}
-      {seller && (
-        <div style={{ marginTop: "20px" }}>
-          <h4>Seller Info</h4>
+        <p>
+          <strong>Location:</strong>{" "}
+          {product.street && product.city && product.governorate
+            ? `${product.street}, ${product.city}, ${product.governorate}`
+            : product.location || "Not specified"}
+        </p>
+      </div>
 
-          <img
-            src={seller.image || "/images/default-user.png"}
-            alt="seller"
-            style={{ width: "80px", borderRadius: "50%" }}
-          />
-
-          <p>{seller.name}</p>
-
-          {/* ⭐ RATING PLACEHOLDER */}
-          <p>⭐ Rating: (coming soon)</p>
-        </div>
-      )}
-
-      {/* ❤️ WISHLIST */}
-      <button
-        onClick={async () => {
-          try {
-            await axios.post(`${API}/wishlist`, {
-              user_id: user.id,
-              product_id: product.id,
-            });
-            alert("Added to wishlist");
-          } catch (err) {
-            console.log(err);
-          }
+      {/* SELLER INFO */}
+      <div
+        className="seller-info"
+        style={{
+          marginTop: "30px",
+          padding: "15px",
+          border: "1px solid #ddd",
+          borderRadius: "10px",
+          maxWidth: "400px",
         }}
       >
-        ❤️ Add to Wishlist
-      </button>
+        <h3>Seller Info</h3>
 
-      {/* 💬 CHAT */}
-      <div style={{ marginTop: "20px" }}>
-        <button
-          onClick={() =>
-            navigate("/chat", {
-              state: { receiverId: product.user_id },
-            })
-          }
-        >
-          Chat with Seller
-        </button>
+        {seller ? (
+          <>
+            <img
+              src={seller.image || seller.image_url || "/images/default-user.png"}
+              alt="seller"
+              style={{
+                width: "80px",
+                height: "80px",
+                borderRadius: "50%",
+                objectFit: "cover",
+              }}
+            />
+
+            <p>
+              <strong>Name:</strong> {seller.username || seller.name}
+            </p>
+
+            <p>
+              <strong>Rating:</strong> ⭐⭐⭐⭐⭐
+            </p>
+          </>
+        ) : (
+          <p>Seller info not available</p>
+        )}
+      </div>
+
+      {/* ACTION BUTTONS */}
+      <div style={{ marginTop: "25px", display: "flex", gap: "10px" }}>
+        {user ? (
+          <>
+            <button onClick={addToWishlist}>❤️ Add to Wishlist</button>
+
+            <button onClick={chatWithSeller}>💬 Chat with Seller</button>
+          </>
+        ) : (
+          <>
+            <button onClick={() => navigate("/login")}>
+              Login to Add to Wishlist
+            </button>
+
+            <button onClick={() => navigate("/login")}>
+              Login to Chat with Seller
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
