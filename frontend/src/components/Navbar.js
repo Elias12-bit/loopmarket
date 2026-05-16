@@ -1,20 +1,21 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [user, setUser] = useState(null);
 
   useEffect(() => {
     const loggedUser = JSON.parse(localStorage.getItem("user"));
     setUser(loggedUser);
-  }, []);
+  }, [location]);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
     setUser(null);
     navigate("/");
-    window.location.reload();
   };
 
   return (
@@ -34,27 +35,25 @@ const Navbar = () => {
           Profile
         </Link>
 
-        {user && (
-          <>
-            <Link style={styles.link} to="/chat">
-              Chat
-            </Link>
+        {/* These appear for guests and logged-in users */}
+        <Link style={styles.link} to="/chat">
+          Chat
+        </Link>
 
-            <Link style={styles.link} to="/wishlist">
-              Wishlist
-            </Link>
-          </>
-        )}
+        <Link style={styles.link} to="/wishlist">
+          Wishlist
+        </Link>
 
+        <Link style={styles.link} to="/my-ads">
+          My Ads
+        </Link>
+
+        {/* Admin appears only for admin */}
         {user?.role === "admin" && (
           <Link style={styles.link} to="/admin">
             Admin
           </Link>
         )}
-        
-        <Link style={styles.link} to="/my-ads">
-           My Ads
-        </Link>
       </div>
 
       {/* AUTH AREA */}
