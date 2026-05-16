@@ -51,6 +51,10 @@ const Navbar = () => {
             Admin
           </Link>
         )}
+        
+        <Link style={styles.link} to="/my-ads">
+           My Ads
+        </Link>
       </div>
 
       {/* AUTH AREA */}

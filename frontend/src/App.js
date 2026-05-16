@@ -17,6 +17,7 @@ import UpdateProduct from "./pages/UpdateProduct";
 
 import ChatPage from "./pages/ChatPage";
 import Wishlist from "./pages/Wishlist";
+import MyAds from "./pages/MyAds";
 
 import AdminPanel from "./pages/AdminPanel";
 
@@ -56,6 +57,8 @@ function App() {
 
         {/* ❤️ WISHLIST */}
         <Route path="/wishlist" element={<Wishlist />} />
+        
+        <Route path="/my-ads" element={<MyAds />} />
 
         {/* 🛠️ ADMIN */}
         <Route path="/admin" element={<AdminPanel />} />
