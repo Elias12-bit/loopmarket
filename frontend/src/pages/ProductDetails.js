@@ -27,7 +27,7 @@ const ProductDetails = () => {
         setSeller(sellerRes.data);
       }
     } catch (err) {
-      console.error(err);
+      console.error("Product details error:", err);
       setError(true);
     }
   };
@@ -91,6 +91,7 @@ const ProductDetails = () => {
     <div className="product-details-container" style={{ padding: "20px" }}>
       <button onClick={() => navigate(-1)}>⬅ Back</button>
 
+      {/* PRODUCT DETAILS */}
       <div style={{ marginTop: "20px" }}>
         <h2>{product.title}</h2>
 
@@ -126,6 +127,7 @@ const ProductDetails = () => {
         </p>
       </div>
 
+      {/* SELLER INFO */}
       <div
         className="seller-info"
         style={{
@@ -172,6 +174,7 @@ const ProductDetails = () => {
         )}
       </div>
 
+      {/* ACTION BUTTONS */}
       <div
         style={{
           marginTop: "25px",
@@ -183,7 +186,6 @@ const ProductDetails = () => {
         {user ? (
           <>
             <button onClick={addToWishlist}>❤️ Add to Wishlist</button>
-
             <button onClick={chatWithSeller}>💬 Chat with Seller</button>
           </>
         ) : (

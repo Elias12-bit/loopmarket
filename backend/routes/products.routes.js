@@ -7,23 +7,19 @@ router.get("/", (req, res) => {
   const sql = `
     SELECT 
       p.*,
-      c.name AS category_name,
-      l.street,
-      l.building,
-      ci.name AS city,
-      g.name AS governorate
+      c.name AS category_name
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
-    LEFT JOIN locations l ON p.location_id = l.id
-    LEFT JOIN cities ci ON l.city_id = ci.id
-    LEFT JOIN governorates g ON ci.governorate_id = g.id
     ORDER BY p.id DESC
   `;
 
   db.query(sql, (err, result) => {
     if (err) {
       console.log("Get products error:", err);
-      return res.status(500).json({ message: "Failed to get products" });
+      return res.status(500).json({
+        message: "Failed to get products",
+        error: err.message,
+      });
     }
 
     res.json(result);
@@ -38,16 +34,9 @@ router.get("/user/:userId", (req, res) => {
   const sql = `
     SELECT 
       p.*,
-      c.name AS category_name,
-      l.street,
-      l.building,
-      ci.name AS city,
-      g.name AS governorate
+      c.name AS category_name
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
-    LEFT JOIN locations l ON p.location_id = l.id
-    LEFT JOIN cities ci ON l.city_id = ci.id
-    LEFT JOIN governorates g ON ci.governorate_id = g.id
     WHERE p.user_id = ?
     ORDER BY p.id DESC
   `;
@@ -55,7 +44,10 @@ router.get("/user/:userId", (req, res) => {
   db.query(sql, [userId], (err, result) => {
     if (err) {
       console.log("Get user products error:", err);
-      return res.status(500).json({ message: "Failed to get user products" });
+      return res.status(500).json({
+        message: "Failed to get user products",
+        error: err.message,
+      });
     }
 
     res.json(result);
@@ -69,27 +61,25 @@ router.get("/:id", (req, res) => {
   const sql = `
     SELECT 
       p.*,
-      c.name AS category_name,
-      l.street,
-      l.building,
-      ci.name AS city,
-      g.name AS governorate
+      c.name AS category_name
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
-    LEFT JOIN locations l ON p.location_id = l.id
-    LEFT JOIN cities ci ON l.city_id = ci.id
-    LEFT JOIN governorates g ON ci.governorate_id = g.id
     WHERE p.id = ?
   `;
 
   db.query(sql, [id], (err, result) => {
     if (err) {
       console.log("Get product details error:", err);
-      return res.status(500).json({ message: "Failed to get product" });
+      return res.status(500).json({
+        message: "Failed to get product",
+        error: err.message,
+      });
     }
 
     if (result.length === 0) {
-      return res.status(404).json({ message: "Product not found" });
+      return res.status(404).json({
+        message: "Product not found",
+      });
     }
 
     res.json(result[0]);
@@ -109,7 +99,9 @@ router.post("/", (req, res) => {
   } = req.body;
 
   if (!user_id) {
-    return res.status(400).json({ message: "user_id is required" });
+    return res.status(400).json({
+      message: "user_id is required",
+    });
   }
 
   const sql = `
@@ -124,7 +116,10 @@ router.post("/", (req, res) => {
     (err, result) => {
       if (err) {
         console.log("Add product error:", err);
-        return res.status(500).json({ message: "Failed to add product" });
+        return res.status(500).json({
+          message: "Failed to add product",
+          error: err.message,
+        });
       }
 
       res.json({
@@ -166,22 +161,29 @@ router.put("/:id", (req, res) => {
     (err) => {
       if (err) {
         console.log("Update product error:", err);
-        return res.status(500).json({ message: "Failed to update product" });
+        return res.status(500).json({
+          message: "Failed to update product",
+          error: err.message,
+        });
       }
 
-      res.json({ message: "Product updated successfully" });
+      res.json({
+        message: "Product updated successfully",
+      });
     }
   );
 });
 
 // DELETE PRODUCT
-// Allows owner OR admin to delete
+// Owner or admin can delete
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
   const userId = req.headers.userid;
 
   if (!userId) {
-    return res.status(401).json({ message: "User ID is required" });
+    return res.status(401).json({
+      message: "User ID is required",
+    });
   }
 
   const userSql = "SELECT role FROM users WHERE id = ?";
@@ -189,11 +191,16 @@ router.delete("/:id", (req, res) => {
   db.query(userSql, [userId], (userErr, userResult) => {
     if (userErr) {
       console.log("Check user role error:", userErr);
-      return res.status(500).json({ message: "Failed to check user" });
+      return res.status(500).json({
+        message: "Failed to check user",
+        error: userErr.message,
+      });
     }
 
     if (userResult.length === 0) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        message: "User not found",
+      });
     }
 
     const role = userResult[0].role;
@@ -212,7 +219,10 @@ router.delete("/:id", (req, res) => {
     db.query(deleteSql, values, (deleteErr, result) => {
       if (deleteErr) {
         console.log("Delete product error:", deleteErr);
-        return res.status(500).json({ message: "Failed to delete product" });
+        return res.status(500).json({
+          message: "Failed to delete product",
+          error: deleteErr.message,
+        });
       }
 
       if (result.affectedRows === 0) {
@@ -221,7 +231,9 @@ router.delete("/:id", (req, res) => {
         });
       }
 
-      res.json({ message: "Product deleted successfully" });
+      res.json({
+        message: "Product deleted successfully",
+      });
     });
   });
 });
