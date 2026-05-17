@@ -8,7 +8,7 @@ const Signup = () => {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    name: "",
+    username: "",
     email: "",
     password: "",
   });
@@ -48,8 +48,8 @@ const Signup = () => {
         <label>Username:</label>
         <input
           type="text"
-          name="name"
-          value={form.name}
+          name="username"
+          value={form.username}
           onChange={handleChange}
           required
         />
