@@ -15,6 +15,7 @@ app.use("/categories", require("./routes/categories.routes"));
 app.use("/wishlist", require("./routes/wishlist.routes"));
 app.use("/chat", require("./routes/chat.routes"));
 app.use("/locations", require("./routes/locations.routes"));
+app.use("/reviews", require("./routes/reviews.routes"));
 app.get("/test-db", (req, res) => {
   db.query("SELECT 1 + 1 AS result", (err, data) => {
     if (err) return res.status(500).send(err);

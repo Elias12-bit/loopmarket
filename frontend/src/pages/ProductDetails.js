@@ -9,6 +9,12 @@ const ProductDetails = () => {
 
   const [product, setProduct] = useState(null);
   const [seller, setSeller] = useState(null);
+  const [ratingInfo, setRatingInfo] = useState({
+    average_rating: 0,
+    total_reviews: 0,
+  });
+
+  const [selectedRating, setSelectedRating] = useState(0);
   const [error, setError] = useState(false);
 
   const user = JSON.parse(localStorage.getItem("user"));
@@ -28,8 +34,13 @@ const ProductDetails = () => {
             `${API}/users/${productRes.data.user_id}`
           );
           setSeller(sellerRes.data);
+
+          const ratingRes = await axios.get(
+            `${API}/reviews/seller/${productRes.data.user_id}`
+          );
+          setRatingInfo(ratingRes.data);
         } catch (sellerErr) {
-          console.error("Seller info error:", sellerErr);
+          console.error("Seller/rating info error:", sellerErr);
           setSeller(null);
         }
       }
@@ -59,23 +70,72 @@ const ProductDetails = () => {
   };
 
   const chatWithSeller = () => {
-  if (!user) {
-    navigate("/login");
-    return;
-  }
+    if (!user) {
+      navigate("/login");
+      return;
+    }
 
-  if (!product.user_id) {
-    alert("Seller not available for this product.");
-    return;
-  }
+    if (!product.user_id) {
+      alert("Seller not available for this product.");
+      return;
+    }
 
-  if (Number(user.id) === Number(product.user_id)) {
-    alert("You cannot chat with yourself.");
-    return;
-  }
+    if (Number(user.id) === Number(product.user_id)) {
+      alert("You cannot chat with yourself.");
+      return;
+    }
 
-  navigate(`/chat?sellerId=${product.user_id}`);
-};
+    navigate(`/chat?sellerId=${product.user_id}`);
+  };
+
+  const submitRating = async (ratingValue) => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    if (!product.user_id) {
+      alert("Seller not available.");
+      return;
+    }
+
+    if (Number(user.id) === Number(product.user_id)) {
+      alert("You cannot rate yourself.");
+      return;
+    }
+
+    try {
+      setSelectedRating(ratingValue);
+
+      await axios.post(`${API}/reviews`, {
+        reviewer_id: user.id,
+        seller_id: product.user_id,
+        product_id: product.id,
+        rating: ratingValue,
+      });
+
+      alert("Rating submitted successfully ⭐");
+
+      const ratingRes = await axios.get(
+        `${API}/reviews/seller/${product.user_id}`
+      );
+      setRatingInfo(ratingRes.data);
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "Failed to submit rating");
+    }
+  };
+
+  const renderAverageStars = () => {
+    const avg = Number(ratingInfo.average_rating || 0);
+    const rounded = Math.round(avg);
+
+    if (rounded === 0) {
+      return "No ratings yet";
+    }
+
+    return "⭐".repeat(rounded) + "☆".repeat(5 - rounded);
+  };
 
   if (error) {
     return (
@@ -94,6 +154,7 @@ const ProductDetails = () => {
     <div className="product-details-container" style={{ padding: "20px" }}>
       <button onClick={() => navigate(-1)}>⬅ Back</button>
 
+      {/* PRODUCT DETAILS */}
       <div style={{ marginTop: "20px" }}>
         <h2>{product.title}</h2>
 
@@ -129,6 +190,7 @@ const ProductDetails = () => {
         </p>
       </div>
 
+      {/* SELLER INFO */}
       <div
         className="seller-info"
         style={{
@@ -136,7 +198,7 @@ const ProductDetails = () => {
           padding: "15px",
           border: "1px solid #ddd",
           borderRadius: "10px",
-          maxWidth: "400px",
+          maxWidth: "450px",
         }}
       >
         <h3>Seller Info</h3>
@@ -144,11 +206,7 @@ const ProductDetails = () => {
         {seller ? (
           <>
             <img
-              src={
-                seller.image ||
-                seller.image_url ||
-                "/images/default-user.png"
-              }
+              src={seller.image_url || "/images/default-user.png"}
               alt="seller"
               style={{
                 width: "80px",
@@ -172,14 +230,61 @@ const ProductDetails = () => {
             </p>
 
             <p>
-              <strong>Rating:</strong> ⭐⭐⭐⭐⭐
+              <strong>Average Rating:</strong> {renderAverageStars()}
             </p>
+
+            <p>
+              <strong>Rating Number:</strong>{" "}
+              {Number(ratingInfo.average_rating || 0).toFixed(1)} / 5
+            </p>
+
+            <p>
+              <strong>Total Reviews:</strong> {ratingInfo.total_reviews || 0}
+            </p>
+
+            {/* RATE SELLER */}
+            <div style={{ marginTop: "15px" }}>
+              <p>
+                <strong>Rate this seller:</strong>
+              </p>
+
+              {[1, 2, 3, 4, 5].map((star) => (
+                <span
+                  key={star}
+                  onClick={() => submitRating(star)}
+                  style={{
+                    cursor:
+                      user && Number(user.id) !== Number(product.user_id)
+                        ? "pointer"
+                        : "not-allowed",
+                    fontSize: "30px",
+                    color: star <= selectedRating ? "gold" : "gray",
+                    marginRight: "5px",
+                  }}
+                >
+                  ★
+                </span>
+              ))}
+
+              {!user && (
+                <p style={{ color: "red" }}>
+                  Login to rate this seller.
+                </p>
+              )}
+
+              {user && Number(user.id) === Number(product.user_id) && (
+                <p style={{ color: "red" }}>
+                  You cannot rate yourself.
+                </p>
+              )}
+            </div>
           </>
         ) : (
           <p>Seller info not available</p>
         )}
       </div>
 
+      {/* ACTION BUTTONS */}
       <div
         style={{
           marginTop: "25px",
