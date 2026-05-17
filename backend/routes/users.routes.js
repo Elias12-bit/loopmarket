@@ -52,13 +52,10 @@ router.put("/:id", (req, res) => {
     username,
     email,
     phone,
-    address,
     image_url,
-    image,
     description,
     gender,
     dob,
-    status,
   } = req.body;
 
   const sql = `
@@ -67,13 +64,10 @@ router.put("/:id", (req, res) => {
       username = ?,
       email = ?,
       phone = ?,
-      address = ?,
       image_url = ?,
-      image = ?,
       description = ?,
       gender = ?,
-      dob = ?,
-      status = ?
+      dob = ?
     WHERE id = ?
   `;
 
@@ -83,13 +77,10 @@ router.put("/:id", (req, res) => {
       username,
       email,
       phone,
-      address,
       image_url,
-      image,
       description,
       gender,
-      dob,
-      status,
+      dob || null,
       id,
     ],
     (err) => {
@@ -105,7 +96,6 @@ router.put("/:id", (req, res) => {
     }
   );
 });
-
 // DELETE USER
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
