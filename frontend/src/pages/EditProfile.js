@@ -87,9 +87,10 @@ const EditProfile = () => {
 
       navigate("/profile");
     } catch (err) {
-      console.error(err);
-      setError(true);
-    }
+        console.error("Edit profile error:", err.response?.data || err);
+        alert(err.response?.data?.error || "Profile was not saved");
+        setError(true);
+   }
   };
 
   if (!user) {
