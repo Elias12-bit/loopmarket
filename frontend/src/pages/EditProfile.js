@@ -15,6 +15,7 @@ const EditProfile = () => {
     gender: "",
     dob: "",
     phone: "",
+    address: "",
     email: "",
   });
 
@@ -41,12 +42,12 @@ const EditProfile = () => {
         gender: res.data.gender || "",
         dob: res.data.dob ? res.data.dob.substring(0, 10) : "",
         phone: res.data.phone || "",
+        address: res.data.address || "",
 
-        // keep email empty like you requested
+        // email box stays empty unless user wants to change it
         email: "",
       });
 
-      // save old email in case user does not type a new one
       setOldEmail(res.data.email || "");
     } catch (err) {
       console.error(err);
@@ -70,8 +71,9 @@ const EditProfile = () => {
         gender: form.gender,
         dob: form.dob,
         phone: form.phone,
+        address: form.address,
 
-        // if email box is empty, keep old email
+        // if email is empty, keep the old email
         email: form.email.trim() === "" ? oldEmail : form.email,
       };
 
@@ -87,15 +89,13 @@ const EditProfile = () => {
 
       navigate("/profile");
     } catch (err) {
-        console.error("Edit profile error:", err.response?.data || err);
-        alert(err.response?.data?.error || "Profile was not saved");
-        setError(true);
-   }
+      console.error("Edit profile error:", err.response?.data || err);
+      alert(err.response?.data?.error || "Profile was not saved");
+      setError(true);
+    }
   };
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <div className="edit-profile-container" style={{ padding: "20px" }}>
@@ -170,6 +170,15 @@ const EditProfile = () => {
 
         <label>Phone Number:</label>
         <input name="phone" value={form.phone} onChange={handleChange} />
+
+        <br />
+
+        <label>Address:</label>
+        <input
+          name="address"
+          value={form.address}
+          onChange={handleChange}
+        />
 
         <br />
 

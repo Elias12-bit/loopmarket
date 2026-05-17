@@ -52,6 +52,7 @@ router.put("/:id", (req, res) => {
     username,
     email,
     phone,
+    address,
     image_url,
     description,
     gender,
@@ -64,6 +65,7 @@ router.put("/:id", (req, res) => {
       username = ?,
       email = ?,
       phone = ?,
+      address = ?,
       image_url = ?,
       description = ?,
       gender = ?,
@@ -77,6 +79,7 @@ router.put("/:id", (req, res) => {
       username,
       email,
       phone,
+      address,
       image_url,
       description,
       gender,
@@ -96,6 +99,7 @@ router.put("/:id", (req, res) => {
     }
   );
 });
+
 // DELETE USER
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
