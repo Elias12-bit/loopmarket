@@ -4,27 +4,15 @@ const db = require("../db");
 
 // GET ALL USERS
 router.get("/", (req, res) => {
-  const sql = `
-    SELECT 
-      id,
-      username,
-      email,
-      phone,
-      address,
-      image_url,
-      image,
-      description,
-      gender,
-      dob,
-      status,
-      role
-    FROM users
-  `;
+  const sql = "SELECT * FROM users";
 
   db.query(sql, (err, result) => {
     if (err) {
       console.log("Get users error:", err);
-      return res.status(500).json({ message: "Failed to get users" });
+      return res.status(500).json({
+        message: "Failed to get users",
+        error: err.message,
+      });
     }
 
     res.json(result);
@@ -35,32 +23,21 @@ router.get("/", (req, res) => {
 router.get("/:id", (req, res) => {
   const { id } = req.params;
 
-  const sql = `
-    SELECT 
-      id,
-      username,
-      email,
-      phone,
-      address,
-      image_url,
-      image,
-      description,
-      gender,
-      dob,
-      status,
-      role
-    FROM users
-    WHERE id = ?
-  `;
+  const sql = "SELECT * FROM users WHERE id = ?";
 
   db.query(sql, [id], (err, result) => {
     if (err) {
       console.log("Get user error:", err);
-      return res.status(500).json({ message: "Failed to get user" });
+      return res.status(500).json({
+        message: "Failed to get user",
+        error: err.message,
+      });
     }
 
     if (result.length === 0) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        message: "User not found",
+      });
     }
 
     res.json(result[0]);
@@ -118,7 +95,10 @@ router.put("/:id", (req, res) => {
     (err) => {
       if (err) {
         console.log("Update user error:", err);
-        return res.status(500).json({ message: "Failed to update user" });
+        return res.status(500).json({
+          message: "Failed to update user",
+          error: err.message,
+        });
       }
 
       res.json({ message: "User updated successfully" });
@@ -133,7 +113,10 @@ router.delete("/:id", (req, res) => {
   db.query("DELETE FROM users WHERE id = ?", [id], (err) => {
     if (err) {
       console.log("Delete user error:", err);
-      return res.status(500).json({ message: "Failed to delete user" });
+      return res.status(500).json({
+        message: "Failed to delete user",
+        error: err.message,
+      });
     }
 
     res.json({ message: "User deleted successfully" });

@@ -19,12 +19,19 @@ const ProductDetails = () => {
 
   const fetchProduct = async () => {
     try {
-      const res = await axios.get(`${API}/products/${id}`);
-      setProduct(res.data);
+      const productRes = await axios.get(`${API}/products/${id}`);
+      setProduct(productRes.data);
 
-      if (res.data.user_id) {
-        const sellerRes = await axios.get(`${API}/users/${res.data.user_id}`);
-        setSeller(sellerRes.data);
+      if (productRes.data.user_id) {
+        try {
+          const sellerRes = await axios.get(
+            `${API}/users/${productRes.data.user_id}`
+          );
+          setSeller(sellerRes.data);
+        } catch (sellerErr) {
+          console.error("Seller info error:", sellerErr);
+          setSeller(null);
+        }
       }
     } catch (err) {
       console.error("Product details error:", err);
@@ -62,7 +69,7 @@ const ProductDetails = () => {
       return;
     }
 
-    if (user.id === product.user_id) {
+    if (Number(user.id) === Number(product.user_id)) {
       alert("You cannot chat with yourself.");
       return;
     }
@@ -91,7 +98,6 @@ const ProductDetails = () => {
     <div className="product-details-container" style={{ padding: "20px" }}>
       <button onClick={() => navigate(-1)}>⬅ Back</button>
 
-      {/* PRODUCT DETAILS */}
       <div style={{ marginTop: "20px" }}>
         <h2>{product.title}</h2>
 
@@ -127,7 +133,6 @@ const ProductDetails = () => {
         </p>
       </div>
 
-      {/* SELLER INFO */}
       <div
         className="seller-info"
         style={{
@@ -143,7 +148,11 @@ const ProductDetails = () => {
         {seller ? (
           <>
             <img
-              src={seller.image || seller.image_url || "/images/default-user.png"}
+              src={
+                seller.image ||
+                seller.image_url ||
+                "/images/default-user.png"
+              }
               alt="seller"
               style={{
                 width: "80px",
@@ -154,7 +163,8 @@ const ProductDetails = () => {
             />
 
             <p>
-              <strong>Name:</strong> {seller.username || "Unknown seller"}
+              <strong>Name:</strong>{" "}
+              {seller.username || seller.name || "Unknown seller"}
             </p>
 
             <p>
@@ -174,7 +184,6 @@ const ProductDetails = () => {
         )}
       </div>
 
-      {/* ACTION BUTTONS */}
       <div
         style={{
           marginTop: "25px",
