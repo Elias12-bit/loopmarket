@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import API from "../api";
 
 const ChatPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   const user = JSON.parse(localStorage.getItem("user"));
   const currentUserId = user?.id;
+
+  const sellerId = searchParams.get("sellerId");
 
   const [conversations, setConversations] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -19,18 +21,18 @@ const ChatPage = () => {
     if (user) {
       fetchConversations();
 
-      if (location.state?.receiverId) {
-        openChatWithSeller(location.state.receiverId);
+      if (sellerId) {
+        openChatWithSeller(sellerId);
       }
     }
-  }, [location.state]);
+  }, [sellerId]);
 
   const fetchConversations = async () => {
     try {
       const res = await axios.get(`${API}/chat/conversations/${currentUserId}`);
       setConversations(res.data);
     } catch (err) {
-      console.error(err);
+      console.error("Fetch conversations error:", err);
     }
   };
 
@@ -45,7 +47,7 @@ const ChatPage = () => {
 
       setMessages(messagesRes.data);
     } catch (err) {
-      console.error(err);
+      console.error("Open seller chat error:", err);
     }
   };
 
@@ -59,7 +61,7 @@ const ChatPage = () => {
 
       setMessages(res.data);
     } catch (err) {
-      console.error(err);
+      console.error("Fetch messages error:", err);
     }
   };
 
@@ -83,7 +85,7 @@ const ChatPage = () => {
       setMessages(res.data);
       fetchConversations();
     } catch (err) {
-      console.error(err);
+      console.error("Send message error:", err);
     }
   };
 
@@ -110,10 +112,11 @@ const ChatPage = () => {
       className="chat-page"
       style={{
         display: "flex",
-        height: "80vh",
+        minHeight: "80vh",
         padding: "20px",
       }}
     >
+      {/* LEFT SIDE - CONVERSATION LIST */}
       <div
         style={{
           width: "30%",
@@ -156,12 +159,18 @@ const ChatPage = () => {
                 }}
               />
 
-              <strong>{person.username || person.name}</strong>
+              <div>
+                <strong>{person.username || person.name || "User"}</strong>
+                <p style={{ margin: 0, fontSize: "12px" }}>
+                  {person.email}
+                </p>
+              </div>
             </div>
           ))
         )}
       </div>
 
+      {/* RIGHT SIDE - CHAT BOX */}
       <div
         style={{
           width: "70%",
@@ -175,7 +184,9 @@ const ChatPage = () => {
           </div>
         ) : (
           <>
-            <h2>Chat with {selectedUser.username || selectedUser.name}</h2>
+            <h2>
+              Chat with {selectedUser.username || selectedUser.name || "User"}
+            </h2>
 
             <div
               style={{
@@ -194,7 +205,9 @@ const ChatPage = () => {
                     key={msg.id}
                     style={{
                       textAlign:
-                        msg.sender_id === currentUserId ? "right" : "left",
+                        Number(msg.sender_id) === Number(currentUserId)
+                          ? "right"
+                          : "left",
                       marginBottom: "10px",
                     }}
                   >
@@ -204,7 +217,7 @@ const ChatPage = () => {
                         padding: "10px",
                         borderRadius: "10px",
                         backgroundColor:
-                          msg.sender_id === currentUserId
+                          Number(msg.sender_id) === Number(currentUserId)
                             ? "#DCF8C6"
                             : "#eee",
                       }}

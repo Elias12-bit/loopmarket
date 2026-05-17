@@ -59,27 +59,23 @@ const ProductDetails = () => {
   };
 
   const chatWithSeller = () => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
+  if (!user) {
+    navigate("/login");
+    return;
+  }
 
-    if (!product.user_id) {
-      alert("Seller not available for this product.");
-      return;
-    }
+  if (!product.user_id) {
+    alert("Seller not available for this product.");
+    return;
+  }
 
-    if (Number(user.id) === Number(product.user_id)) {
-      alert("You cannot chat with yourself.");
-      return;
-    }
+  if (Number(user.id) === Number(product.user_id)) {
+    alert("You cannot chat with yourself.");
+    return;
+  }
 
-    navigate("/chat", {
-      state: {
-        receiverId: product.user_id,
-      },
-    });
-  };
+  navigate(`/chat?sellerId=${product.user_id}`);
+};
 
   if (error) {
     return (
