@@ -145,18 +145,14 @@ const ChatPage = () => {
               }}
             >
               <img
-                src={
-                  person.image ||
-                  person.image_url ||
-                  "/images/default-user.png"
-                }
+                src={person.image_url || "/images/default-user.png"}
                 alt="user"
                 style={{
-                  width: "45px",
-                  height: "45px",
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                }}
+                width: "45px",
+                height: "45px",
+                borderRadius: "50%",
+                objectFit: "cover",
+               }}
               />
 
               <div>

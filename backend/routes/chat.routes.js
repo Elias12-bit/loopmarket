@@ -11,7 +11,6 @@ router.get("/conversations/:userId", (req, res) => {
       u.id,
       u.username,
       u.email,
-      u.image,
       u.image_url
     FROM users u
     JOIN messages m
