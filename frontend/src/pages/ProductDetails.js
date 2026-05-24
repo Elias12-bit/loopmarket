@@ -131,7 +131,7 @@ const ProductDetails = () => {
     const rounded = Math.round(avg);
 
     if (rounded === 0) {
-      return "No ratings yet";
+      return "☆☆☆☆☆";
     }
 
     return "⭐".repeat(rounded) + "☆".repeat(5 - rounded);
@@ -139,175 +139,250 @@ const ProductDetails = () => {
 
   if (error) {
     return (
-      <div style={{ padding: "20px" }}>
-        <p style={{ color: "red" }}>Failed to load product details.</p>
-        <button onClick={() => navigate("/")}>Back Home</button>
+      <div className="product-details-container">
+        <div className="error-message">
+          <h2>Failed to load product details</h2>
+          <p>Please try again later.</p>
+          <button className="btn-primary" onClick={() => navigate("/")}>
+            Back Home
+          </button>
+        </div>
       </div>
     );
   }
 
   if (!product) {
-    return <p style={{ padding: "20px" }}>Loading...</p>;
+    return (
+      <div className="product-details-container">
+        <div className="empty-state">
+          <h2>Loading product...</h2>
+        </div>
+      </div>
+    );
   }
 
+  const isOwner = user && Number(user.id) === Number(product.user_id);
+
   return (
-    <div className="product-details-container" style={{ padding: "20px" }}>
-      <button onClick={() => navigate(-1)}>⬅ Back</button>
+    <div className="product-details-container">
+      {/* BACK BUTTON */}
+      <button className="btn-light" onClick={() => navigate(-1)}>
+        ← Back
+      </button>
 
-      {/* PRODUCT DETAILS */}
-      <div style={{ marginTop: "20px" }}>
-        <h2>{product.title}</h2>
+      {/* MAIN PRODUCT CARD */}
+      <div className="product-details-card" style={{ marginTop: "25px" }}>
+        {/* LEFT IMAGE */}
+        <div>
+          <img
+            src={product.image_url || product.image || "/images/default.jpg"}
+            alt={product.title}
+          />
+        </div>
 
-        <img
-          src={product.image_url || product.image || "/images/default.jpg"}
-          alt={product.title}
-          style={{
-            width: "350px",
-            maxWidth: "100%",
-            height: "250px",
-            objectFit: "cover",
-            borderRadius: "10px",
-            marginBottom: "20px",
-          }}
-        />
+        {/* RIGHT PRODUCT INFO */}
+        <div>
+          <p
+            style={{
+              color: "#f59e0b",
+              fontWeight: "800",
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              marginBottom: "8px",
+            }}
+          >
+            Product Details
+          </p>
 
-        <h3>${product.price}</h3>
+          <h1>{product.title}</h1>
 
-        <p>
-          <strong>Description:</strong> {product.description}
-        </p>
+          <h2
+            style={{
+              color: "#f59e0b",
+              marginBottom: "20px",
+            }}
+          >
+            ${product.price}
+          </h2>
 
-        <p>
-          <strong>Category:</strong>{" "}
-          {product.category_name || product.category || "Not specified"}
-        </p>
+          <p>
+            <strong>Description:</strong>
+          </p>
 
-        <p>
-          <strong>Location:</strong>{" "}
-          {product.street && product.city && product.governorate
-            ? `${product.street}, ${product.city}, ${product.governorate}`
-            : product.location || "Not specified"}
-        </p>
+          <p style={{ color: "#4b5563" }}>
+            {product.description || "No description added for this product."}
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: "15px",
+              marginTop: "25px",
+            }}
+          >
+            <div className="card">
+              <h3>Category</h3>
+              <p>{product.category_name || product.category || "Not specified"}</p>
+            </div>
+
+            <div className="card">
+              <h3>Location</h3>
+              <p>
+                {product.street && product.city && product.governorate
+                  ? `${product.street}, ${product.city}, ${product.governorate}`
+                  : product.location || "Not specified"}
+              </p>
+            </div>
+          </div>
+
+          {/* ACTION BUTTONS */}
+          <div className="button-group" style={{ marginTop: "25px" }}>
+            {user ? (
+              <>
+                <button className="btn-primary" onClick={addToWishlist}>
+                  ❤️ Add to Wishlist
+                </button>
+
+                <button className="btn-dark" onClick={chatWithSeller}>
+                  💬 Chat with Seller
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className="btn-primary"
+                  onClick={() => navigate("/login")}
+                >
+                  Login to Add Wishlist
+                </button>
+
+                <button className="btn-dark" onClick={() => navigate("/login")}>
+                  Login to Chat
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* SELLER INFO */}
-      <div
-        className="seller-info"
-        style={{
-          marginTop: "30px",
-          padding: "15px",
-          border: "1px solid #ddd",
-          borderRadius: "10px",
-          maxWidth: "450px",
-        }}
-      >
-        <h3>Seller Info</h3>
+      {/* SELLER SECTION */}
+      <div className="seller-box" style={{ marginTop: "30px" }}>
+        <h2>Seller Information</h2>
 
         {seller ? (
-          <>
-            <img
-              src={seller.image_url || "/images/default-user.png"}
-              alt="seller"
-              style={{
-                width: "80px",
-                height: "80px",
-                borderRadius: "50%",
-                objectFit: "cover",
-              }}
-            />
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "160px 1fr",
+              gap: "25px",
+              alignItems: "center",
+            }}
+          >
+            {/* SELLER IMAGE */}
+            <div style={{ textAlign: "center" }}>
+              <img
+                src={seller.image_url || "/images/default-user.png"}
+                alt="seller"
+                style={{
+                  width: "130px",
+                  height: "130px",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  border: "5px solid #f59e0b",
+                  background: "#e5e7eb",
+                }}
+              />
+            </div>
 
-            <p>
-              <strong>Name:</strong>{" "}
-              {seller.username || seller.name || "Unknown seller"}
-            </p>
+            {/* SELLER INFO */}
+            <div>
+              <h3>{seller.username || seller.name || "Unknown seller"}</h3>
 
-            <p>
-              <strong>Email:</strong> {seller.email || "Not available"}
-            </p>
-
-            <p>
-              <strong>Phone:</strong> {seller.phone || "Not available"}
-            </p>
-
-            <p>
-              <strong>Average Rating:</strong> {renderAverageStars()}
-            </p>
-
-            <p>
-              <strong>Rating Number:</strong>{" "}
-              {Number(ratingInfo.average_rating || 0).toFixed(1)} / 5
-            </p>
-
-            <p>
-              <strong>Total Reviews:</strong> {ratingInfo.total_reviews || 0}
-            </p>
-
-            {/* RATE SELLER */}
-            <div style={{ marginTop: "15px" }}>
               <p>
-                <strong>Rate this seller:</strong>
+                <strong>Email:</strong> {seller.email || "Not available"}
               </p>
 
-              {[1, 2, 3, 4, 5].map((star) => (
-                <span
-                  key={star}
-                  onClick={() => submitRating(star)}
-                  style={{
-                    cursor:
-                      user && Number(user.id) !== Number(product.user_id)
-                        ? "pointer"
-                        : "not-allowed",
-                    fontSize: "30px",
-                    color: star <= selectedRating ? "gold" : "gray",
-                    marginRight: "5px",
-                  }}
-                >
-                  ★
-                </span>
-              ))}
+              <p>
+                <strong>Phone:</strong> {seller.phone || "Not available"}
+              </p>
 
-              {!user && (
-                <p style={{ color: "red" }}>
-                  Login to rate this seller.
-                </p>
-              )}
+              <p>
+                <strong>Address:</strong> {seller.address || "Not available"}
+              </p>
 
-              {user && Number(user.id) === Number(product.user_id) && (
-                <p style={{ color: "red" }}>
-                  You cannot rate yourself.
-                </p>
-              )}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
+                  gap: "15px",
+                  marginTop: "20px",
+                }}
+              >
+                <div className="card">
+                  <h3>Average Rating</h3>
+                  <p className="stars">{renderAverageStars()}</p>
+                  <p>
+                    {Number(ratingInfo.average_rating || 0).toFixed(1)} / 5
+                  </p>
+                </div>
+
+                <div className="card">
+                  <h3>Total Reviews</h3>
+                  <p
+                    style={{
+                      fontSize: "28px",
+                      fontWeight: "800",
+                      color: "#111827",
+                    }}
+                  >
+                    {ratingInfo.total_reviews || 0}
+                  </p>
+                </div>
+              </div>
+
+              {/* RATE SELLER */}
+              <div style={{ marginTop: "25px" }}>
+                <h3>Rate this seller</h3>
+
+                <div>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span
+                      key={star}
+                      onClick={() => submitRating(star)}
+                      style={{
+                        cursor:
+                          user && !isOwner ? "pointer" : "not-allowed",
+                        fontSize: "34px",
+                        color: star <= selectedRating ? "#f59e0b" : "#d1d5db",
+                        marginRight: "6px",
+                        transition: "0.2s ease",
+                      }}
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+
+                {!user && (
+                  <p style={{ color: "#dc2626", fontWeight: "700" }}>
+                    Login to rate this seller.
+                  </p>
+                )}
+
+                {isOwner && (
+                  <p style={{ color: "#dc2626", fontWeight: "700" }}>
+                    You cannot rate yourself.
+                  </p>
+                )}
+              </div>
             </div>
-          </>
+          </div>
         ) : (
-          <p>Seller info not available</p>
-        )}
-      </div>
-
-      {/* ACTION BUTTONS */}
-      <div
-        style={{
-          marginTop: "25px",
-          display: "flex",
-          gap: "10px",
-          flexWrap: "wrap",
-        }}
-      >
-        {user ? (
-          <>
-            <button onClick={addToWishlist}>❤️ Add to Wishlist</button>
-            <button onClick={chatWithSeller}>💬 Chat with Seller</button>
-          </>
-        ) : (
-          <>
-            <button onClick={() => navigate("/login")}>
-              Login to Add to Wishlist
-            </button>
-
-            <button onClick={() => navigate("/login")}>
-              Login to Chat with Seller
-            </button>
-          </>
+          <div className="empty-state">
+            <h3>Seller info not available</h3>
+            <p>This product does not have seller information yet.</p>
+          </div>
         )}
       </div>
     </div>
