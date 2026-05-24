@@ -15,6 +15,7 @@ const CreateProduct = () => {
   const [categories, setCategories] = useState([]);
   const [categoryId, setCategoryId] = useState("");
 
+  const [cities, setCities] = useState([]);
   const [cityId, setCityId] = useState("");
   const [street, setStreet] = useState("");
   const [building, setBuilding] = useState("");
@@ -29,6 +30,7 @@ const CreateProduct = () => {
     }
 
     fetchCategories();
+    fetchCities();
   }, []);
 
   const fetchCategories = async () => {
@@ -41,6 +43,16 @@ const CreateProduct = () => {
     }
   };
 
+  const fetchCities = async () => {
+    try {
+      const res = await axios.get(`${API}/locations/cities`);
+      setCities(res.data);
+    } catch (err) {
+      console.error("Fetch cities error:", err.response?.data || err);
+      setError("Failed to load cities");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -49,7 +61,14 @@ const CreateProduct = () => {
       return;
     }
 
-    if (!title.trim() || !description.trim() || !price || !categoryId) {
+    if (
+      !title.trim() ||
+      !description.trim() ||
+      !price ||
+      !categoryId ||
+      !cityId ||
+      !street.trim()
+    ) {
       setError("Please fill all required fields");
       return;
     }
@@ -60,12 +79,18 @@ const CreateProduct = () => {
 
       // 1. Create location first
       const locRes = await axios.post(`${API}/locations`, {
-        city_id: cityId || 1,
+        city_id: cityId,
         street,
         building,
       });
 
-      const location_id = locRes.data.location_id;
+      const location_id =
+        locRes.data.location_id || locRes.data.id || locRes.data.insertId;
+
+      if (!location_id) {
+        setError("Location was not created correctly");
+        return;
+      }
 
       // 2. Create product
       await axios.post(`${API}/products`, {
@@ -82,15 +107,22 @@ const CreateProduct = () => {
       navigate("/my-ads");
     } catch (err) {
       console.error("Add product error:", err.response?.data || err);
-      setError(
+
+      const errorMessage =
         err.response?.data?.error ||
-          err.response?.data?.message ||
-          "Something went wrong adding product"
-      );
+        err.response?.data?.message ||
+        "Something went wrong adding product";
+
+      alert(errorMessage);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
+
+  const selectedCity = cities.find(
+    (city) => Number(city.id) === Number(cityId)
+  );
 
   if (!user) {
     return (
@@ -133,7 +165,7 @@ const CreateProduct = () => {
         </div>
       </div>
 
-      {/* FORM */}
+      {/* FORM + PREVIEW */}
       <div
         style={{
           display: "grid",
@@ -208,13 +240,21 @@ const CreateProduct = () => {
 
           <h2 style={{ marginTop: "25px" }}>Location</h2>
 
-          <label>City ID</label>
-          <input
-            type="number"
+          <label>City</label>
+          <select
             value={cityId}
             onChange={(e) => setCityId(e.target.value)}
-            placeholder="Example: 1"
-          />
+            required
+          >
+            <option value="">Select city</option>
+
+            {cities.map((city) => (
+              <option key={city.id} value={city.id}>
+                {city.name}
+                {city.governorate_name ? ` - ${city.governorate_name}` : ""}
+              </option>
+            ))}
+          </select>
 
           <label>Street</label>
           <input
@@ -281,6 +321,32 @@ const CreateProduct = () => {
 
           <p style={{ color: "#6b7280" }}>
             {description || "Product description will appear here."}
+          </p>
+
+          <p>
+            <strong>Category:</strong>{" "}
+            {categoryId
+              ? categories.find(
+                  (cat) =>
+                    Number(cat.id || cat.category_id) === Number(categoryId)
+                )?.name ||
+                categories.find(
+                  (cat) =>
+                    Number(cat.id || cat.category_id) === Number(categoryId)
+                )?.category_name ||
+                "Selected"
+              : "Not selected"}
+          </p>
+
+          <p>
+            <strong>City:</strong>{" "}
+            {selectedCity
+              ? `${selectedCity.name}${
+                  selectedCity.governorate_name
+                    ? ` - ${selectedCity.governorate_name}`
+                    : ""
+                }`
+              : "Not selected"}
           </p>
 
           <p>
