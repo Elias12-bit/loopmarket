@@ -180,7 +180,7 @@ const CreateProduct = () => {
 
         <br />
 
-        <button type="submit">Add Product</button>
+        <button type="submit">Add product</button>
 
         {error && (
           <p style={{ color: "red" }}>Something went wrong adding product.</p>

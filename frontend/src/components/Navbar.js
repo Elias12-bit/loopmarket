@@ -8,73 +8,99 @@ const Navbar = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const loggedUser = JSON.parse(localStorage.getItem("user"));
-    setUser(loggedUser);
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    setUser(savedUser);
   }, [location]);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
     setUser(null);
-    navigate("/");
+    navigate("/login");
   };
 
   return (
-    <nav style={styles.navbar}>
-      {/* LOGO */}
-      <div style={styles.logo} onClick={() => navigate("/")}>
-        Loop Market
+    <nav
+      style={{
+        backgroundColor: "#222",
+        color: "white",
+        padding: "15px 30px",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+      }}
+    >
+      {/* LEFT SIDE */}
+      <div>
+        <Link
+          to="/"
+          style={{
+            color: "white",
+            textDecoration: "none",
+            fontSize: "24px",
+            fontWeight: "bold",
+          }}
+        >
+          Loop Market
+        </Link>
       </div>
 
-      {/* LINKS */}
-      <div style={styles.links}>
-        <Link style={styles.link} to="/">
+      {/* RIGHT SIDE */}
+      <div
+        style={{
+          display: "flex",
+          gap: "20px",
+          alignItems: "center",
+        }}
+      >
+        <Link style={linkStyle} to="/">
           Home
         </Link>
 
-        <Link style={styles.link} to="/profile">
+        <Link style={linkStyle} to="/profile">
           Profile
         </Link>
 
-        {/* These appear for guests and logged-in users */}
-        <Link style={styles.link} to="/chat">
-          Chat
-        </Link>
-
-        <Link style={styles.link} to="/wishlist">
+        <Link style={linkStyle} to="/wishlist">
           Wishlist
         </Link>
 
-        <Link style={styles.link} to="/my-ads">
+        <Link style={linkStyle} to="/chat">
+          Chat
+        </Link>
+
+        <Link style={linkStyle} to="/my-ads">
           My Ads
         </Link>
 
-        {/* Admin appears only for admin */}
+        {/* Admin appears only if user role is admin */}
         {user?.role === "admin" && (
-          <Link style={styles.link} to="/admin">
+          <Link style={linkStyle} to="/admin">
             Admin
           </Link>
         )}
-      </div>
 
-      {/* AUTH AREA */}
-      <div style={styles.auth}>
         {!user ? (
           <>
-            <button style={styles.button} onClick={() => navigate("/login")}>
+            <Link style={linkStyle} to="/login">
               Login
-            </button>
+            </Link>
 
-            <button style={styles.button} onClick={() => navigate("/signup")}>
+            <Link style={buttonStyle} to="/signup">
               Sign Up
-            </button>
+            </Link>
           </>
         ) : (
           <>
-            <span style={styles.username}>
-              👤 {user.username || user.name}
+            <span
+              style={{
+                color: "#f5f5f5",
+                fontWeight: "bold",
+              }}
+            >
+              {user.username}
             </span>
 
-            <button style={styles.logoutButton} onClick={handleLogout}>
+            <button onClick={handleLogout} style={logoutStyle}>
               Logout
             </button>
           </>
@@ -84,59 +110,29 @@ const Navbar = () => {
   );
 };
 
-const styles = {
-  navbar: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "12px 25px",
-    backgroundColor: "#222",
-    color: "white",
-  },
+const linkStyle = {
+  color: "white",
+  textDecoration: "none",
+  fontSize: "16px",
+};
 
-  logo: {
-    fontSize: "22px",
-    fontWeight: "bold",
-    cursor: "pointer",
-  },
+const buttonStyle = {
+  backgroundColor: "#ff9800",
+  color: "white",
+  textDecoration: "none",
+  padding: "8px 14px",
+  borderRadius: "5px",
+  fontSize: "16px",
+};
 
-  links: {
-    display: "flex",
-    alignItems: "center",
-    gap: "18px",
-  },
-
-  link: {
-    color: "white",
-    textDecoration: "none",
-    fontSize: "16px",
-  },
-
-  auth: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-  },
-
-  username: {
-    marginRight: "10px",
-  },
-
-  button: {
-    padding: "7px 12px",
-    cursor: "pointer",
-    border: "none",
-    borderRadius: "5px",
-  },
-
-  logoutButton: {
-    padding: "7px 12px",
-    cursor: "pointer",
-    border: "none",
-    borderRadius: "5px",
-    backgroundColor: "red",
-    color: "white",
-  },
+const logoutStyle = {
+  backgroundColor: "#e53935",
+  color: "white",
+  border: "none",
+  padding: "8px 14px",
+  borderRadius: "5px",
+  cursor: "pointer",
+  fontSize: "16px",
 };
 
 export default Navbar;
