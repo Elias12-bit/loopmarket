@@ -57,12 +57,22 @@ const CreateProduct = () => {
   const handleImageChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
 
-    if (selectedFiles.length > 5) {
+    const newImages = [...images, ...selectedFiles];
+
+    if (newImages.length > 5) {
       alert("You can upload maximum 5 photos.");
+      e.target.value = "";
       return;
     }
 
-    setImages(selectedFiles);
+    setImages(newImages);
+
+    // This allows the user to choose another photo after already choosing one
+    e.target.value = "";
+  };
+
+  const removeImage = (indexToRemove) => {
+    setImages(images.filter((_, index) => index !== indexToRemove));
   };
 
   const handleSubmit = async (e) => {
@@ -104,7 +114,7 @@ const CreateProduct = () => {
         return;
       }
 
-      // 2. Create product using FormData because we are uploading files
+      // 2. Create product with photos
       const formData = new FormData();
 
       formData.append("title", title);
@@ -132,6 +142,7 @@ const CreateProduct = () => {
       const errorMessage =
         err.response?.data?.error ||
         err.response?.data?.message ||
+        err.message ||
         "Something went wrong adding product";
 
       alert(errorMessage);
@@ -310,8 +321,56 @@ const CreateProduct = () => {
           />
 
           <p style={{ color: "#6b7280", marginTop: "-10px" }}>
-            You can upload up to 5 photos.
+            You can upload up to 5 photos. You can choose them one by one or all
+            together.
           </p>
+
+          {images.length > 0 && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(5, 1fr)",
+                gap: "10px",
+                marginBottom: "18px",
+              }}
+            >
+              {images.map((img, index) => (
+                <div key={index} style={{ position: "relative" }}>
+                  <img
+                    src={URL.createObjectURL(img)}
+                    alt="selected product"
+                    style={{
+                      width: "100%",
+                      height: "80px",
+                      objectFit: "cover",
+                      borderRadius: "10px",
+                      background: "#e5e7eb",
+                    }}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    style={{
+                      position: "absolute",
+                      top: "5px",
+                      right: "5px",
+                      background: "#ef4444",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: "24px",
+                      height: "24px",
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="button-group">
             <button className="btn-primary" type="submit" disabled={loading}>
@@ -353,8 +412,8 @@ const CreateProduct = () => {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(4, 1fr)",
-                gap: "8px",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: "10px",
                 marginBottom: "15px",
               }}
             >
@@ -365,7 +424,7 @@ const CreateProduct = () => {
                   alt="product preview"
                   style={{
                     width: "100%",
-                    height: "60px",
+                    height: "75px",
                     objectFit: "cover",
                     borderRadius: "10px",
                     background: "#e5e7eb",
