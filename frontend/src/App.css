@@ -1,14 +1,6 @@
-* {
-  box-sizing: border-box;
-}
-:root {
-  --bg: #f4f6f9;
-  --surface: #ffffff;
-  --line: #e8edf3;
-  --primary: #1b64f2;
-  --text: #112038;
-  --muted: #64748b;
-}
+/* =========================
+   LOOP MARKET GLOBAL STYLE
+   ========================= */
 
 * {
   box-sizing: border-box;
@@ -16,191 +8,674 @@
 
 body {
   margin: 0;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: var(--bg);
-  color: var(--text);
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  background: #f4f6f8;
+  color: #1f2937;
 }
 
-.topbar {
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  padding: 1rem 2rem;
+a {
+  text-decoration: none;
 }
 
-.brand {
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* =========================
+   NAVBAR
+   ========================= */
+
+nav {
+  background: linear-gradient(135deg, #111827, #1f2937) !important;
+  padding: 16px 40px !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+nav a {
+  transition: 0.2s ease;
+}
+
+nav a:hover {
+  color: #f59e0b !important;
+}
+
+nav button {
+  transition: 0.2s ease;
+}
+
+nav button:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+/* =========================
+   PAGE CONTAINER
+   ========================= */
+
+.page-container,
+.home-container,
+.profile-container,
+.edit-profile-container,
+.admin-container,
+.wishlist-container,
+.my-ads-container,
+.chat-container,
+.product-details-container {
   max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  gap: 0.9rem;
-  align-items: center;
+  margin: 30px auto;
+  padding: 25px;
 }
 
-.logo {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  background: var(--primary);
-  color: #fff;
+/* =========================
+   HEADINGS
+   ========================= */
+
+h1,
+h2,
+h3 {
+  color: #111827;
+  margin-top: 0;
+}
+
+h1 {
+  font-size: 38px;
+  font-weight: 800;
+}
+
+h2 {
+  font-size: 30px;
+  font-weight: 750;
+}
+
+h3 {
+  font-size: 22px;
   font-weight: 700;
 }
 
-.brand h1 {
-  margin: 0;
-  font-size: 1.3rem;
+p {
+  line-height: 1.6;
 }
 
-.brand p {
-  margin: 0.15rem 0 0;
-  color: var(--muted);
-  font-size: 0.9rem;
+/* =========================
+   CARDS
+   ========================= */
+
+.card,
+.product-card,
+.profile-card,
+.admin-card,
+.category-card,
+.review-card,
+.user-card,
+.my-ad-card,
+.wishlist-card {
+  background: white;
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
+  border: 1px solid #e5e7eb;
+  transition: 0.25s ease;
 }
 
-.container {
-  max-width: 1200px;
-  margin: 1.2rem auto 2.5rem;
-  padding: 0 1rem;
+.card:hover,
+.product-card:hover,
+.wishlist-card:hover,
+.my-ad-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 40px rgba(17, 24, 39, 0.13);
 }
 
-.filters {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 1rem;
+/* =========================
+   PRODUCTS GRID
+   ========================= */
+
+.products-grid,
+.wishlist-grid,
+.my-ads-grid,
+.admin-grid {
   display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 25px;
+}
+
+.product-card img,
+.wishlist-card img,
+.my-ad-card img {
+  width: 100%;
+  height: 210px;
+  object-fit: cover;
+  border-radius: 14px;
+  background: #e5e7eb;
+}
+
+.product-card h3,
+.wishlist-card h3,
+.my-ad-card h3 {
+  margin: 14px 0 8px;
+}
+
+.price {
+  color: #f59e0b;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+/* =========================
+   BUTTONS
+   ========================= */
+
+.btn,
+button {
+  border: none;
+  border-radius: 12px;
+  padding: 11px 18px;
+  font-weight: 700;
+  font-size: 15px;
+  transition: 0.2s ease;
+}
+
+.btn:hover,
+button:hover {
+  transform: translateY(-2px);
+}
+
+.btn-primary,
+.save-btn {
+  background: #f59e0b;
+  color: white;
+}
+
+.btn-primary:hover,
+.save-btn:hover {
+  background: #d97706;
+}
+
+.btn-dark {
+  background: #111827;
+  color: white;
+}
+
+.btn-dark:hover {
+  background: #374151;
+}
+
+.btn-danger,
+.delete-btn {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-danger:hover,
+.delete-btn:hover {
+  background: #dc2626;
+}
+
+.btn-success {
+  background: #10b981;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #059669;
+}
+
+.btn-light {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.btn-light:hover {
+  background: #d1d5db;
+}
+
+.button-group,
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 15px;
+}
+
+/* =========================
+   FORMS
+   ========================= */
+
+form {
+  background: white;
+  padding: 28px;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
+  border: 1px solid #e5e7eb;
+}
+
+label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 7px;
+  color: #374151;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 13px 15px;
+  margin-bottom: 18px;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  font-size: 15px;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #f59e0b;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15);
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* =========================
+   LOGIN / SIGNUP
+   ========================= */
+
+.auth-container,
+.login-container,
+.signup-container {
+  max-width: 450px;
+  margin: 70px auto;
+  padding: 20px;
+}
+
+.auth-container form,
+.login-container form,
+.signup-container form {
+  padding: 35px;
+}
+
+.auth-container h2,
+.login-container h2,
+.signup-container h2 {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.auth-container button,
+.login-container button,
+.signup-container button {
+  width: 100%;
+  background: #f59e0b;
+  color: white;
+}
+
+.auth-container button:hover,
+.login-container button:hover,
+.signup-container button:hover {
+  background: #d97706;
+}
+
+/* =========================
+   HOME HERO
+   ========================= */
+
+.hero,
+.home-hero {
+  background: linear-gradient(135deg, #111827, #374151);
+  color: white;
+  border-radius: 24px;
+  padding: 45px;
+  margin-bottom: 35px;
+  box-shadow: 0 16px 40px rgba(17, 24, 39, 0.2);
+}
+
+.hero h1,
+.home-hero h1 {
+  color: white;
+  margin-bottom: 12px;
+}
+
+.hero p,
+.home-hero p {
+  color: #e5e7eb;
+  font-size: 18px;
+}
+
+.search-box {
+  display: flex;
+  gap: 12px;
+  margin-top: 25px;
+}
+
+.search-box input {
+  margin-bottom: 0;
+}
+
+.search-box button {
+  background: #f59e0b;
+  color: white;
+  min-width: 130px;
+}
+
+/* =========================
+   FILTERS
+   ========================= */
+
+.filters,
+.filter-box {
+  background: white;
+  padding: 20px;
+  border-radius: 18px;
+  margin-bottom: 30px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
 }
 
 .filters input,
 .filters select,
-.post-ad input,
-.post-ad select {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 0.6rem 0.75rem;
-  font-size: 0.95rem;
-  width: 100%;
+.filter-box input,
+.filter-box select {
+  margin-bottom: 0;
 }
 
-.listing-section {
-  margin-top: 1rem;
-}
+/* =========================
+   PROFILE
+   ========================= */
 
-.section-header {
+.profile-card {
   display: flex;
-  justify-content: space-between;
+  gap: 25px;
   align-items: center;
 }
 
-.section-header h2 {
-  margin: 0;
-  font-size: 1.35rem;
+.profile-card img,
+.profile-image {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 5px solid #f59e0b;
+  object-fit: cover;
+  background: #e5e7eb;
 }
 
-.section-header span {
-  color: var(--muted);
-  font-size: 0.9rem;
+.profile-info {
+  flex: 1;
 }
 
-.listing-grid {
-  margin-top: 0.8rem;
+.profile-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+/* =========================
+   PRODUCT DETAILS
+   ========================= */
+
+.product-details-card {
+  background: white;
+  border-radius: 24px;
+  padding: 30px;
+  box-shadow: 0 12px 35px rgba(17, 24, 39, 0.1);
   display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: 1fr 1fr;
+  gap: 35px;
 }
 
-.listing-card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+.product-details-card img {
+  width: 100%;
+  height: 430px;
+  object-fit: cover;
+  border-radius: 20px;
+  background: #e5e7eb;
+}
+
+.seller-box {
+  background: #f9fafb;
+  padding: 18px;
+  border-radius: 16px;
+  margin-top: 20px;
+  border: 1px solid #e5e7eb;
+}
+
+.stars {
+  font-size: 28px;
+  color: #f59e0b;
+  cursor: pointer;
+}
+
+/* =========================
+   CHAT
+   ========================= */
+
+.chat-page {
+  max-width: 1200px;
+  margin: 30px auto;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 20px;
+  padding: 20px;
+}
+
+.chat-sidebar,
+.chat-main {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
   overflow: hidden;
 }
 
-.listing-card img {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
+.chat-sidebar {
+  padding: 18px;
 }
 
-.listing-content {
-  padding: 0.85rem;
-}
-
-.listing-content h3 {
-  margin: 0;
-  font-size: 1rem;
-  min-height: 2.5rem;
-}
-
-.price {
-  margin: 0.55rem 0 0;
-  color: var(--primary);
-  font-weight: 700;
-}
-
-.meta,
-.seller {
-  margin: 0.35rem 0 0;
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.post-ad {
-  margin-top: 1.5rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
+.chat-user {
+  padding: 14px;
   border-radius: 12px;
-  padding: 1rem;
-}
-
-.post-ad h2 {
-  margin: 0 0 0.75rem;
-  font-size: 1.2rem;
-}
-
-.post-ad form {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.7rem;
-}
-
-.post-ad button {
-  border: none;
-  border-radius: 8px;
-  background: var(--primary);
-  color: #fff;
-  font-weight: 600;
+  margin-bottom: 10px;
+  background: #f9fafb;
   cursor: pointer;
-  min-height: 42px;
+  transition: 0.2s ease;
 }
 
-.state-message {
-  margin-top: 0.8rem;
-  color: var(--muted);
+.chat-user:hover {
+  background: #fef3c7;
 }
 
-.state-message.error {
-  color: #c1121f;
+.chat-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 620px;
 }
 
-@media (max-width: 1100px) {
-  .filters {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+.chat-header {
+  padding: 18px;
+  background: #111827;
+  color: white;
+  font-weight: 800;
+}
+
+.messages {
+  flex: 1;
+  padding: 20px;
+  background: #f4f6f8;
+  overflow-y: auto;
+}
+
+.message {
+  max-width: 70%;
+  padding: 12px 15px;
+  border-radius: 16px;
+  margin-bottom: 12px;
+}
+
+.message.sent {
+  background: #f59e0b;
+  color: white;
+  margin-left: auto;
+}
+
+.message.received {
+  background: white;
+  color: #111827;
+}
+
+.chat-input {
+  display: flex;
+  gap: 10px;
+  padding: 15px;
+  background: white;
+}
+
+.chat-input input {
+  margin-bottom: 0;
+}
+
+.chat-input button {
+  background: #f59e0b;
+  color: white;
+}
+
+/* =========================
+   ADMIN PANEL
+   ========================= */
+
+.admin-container h2 {
+  margin-bottom: 25px;
+}
+
+.admin-section {
+  background: white;
+  padding: 25px;
+  border-radius: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
+}
+
+.admin-section h3 {
+  border-bottom: 2px solid #f59e0b;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+th {
+  background: #111827;
+  color: white;
+  text-align: left;
+  padding: 14px;
+}
+
+td {
+  padding: 14px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+tr:hover td {
+  background: #f9fafb;
+}
+
+/* =========================
+   EMPTY / ERROR STATES
+   ========================= */
+
+.empty-state,
+.error-message {
+  background: white;
+  border-radius: 18px;
+  padding: 35px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
+}
+
+.error-message {
+  color: #dc2626;
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 900px) {
+  nav {
+    padding: 15px 20px !important;
+    flex-direction: column;
+    gap: 15px;
   }
-}
 
-@media (max-width: 720px) {
-  .topbar {
-    padding: 0.9rem 1rem;
+  nav div {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
-  .filters {
+  .product-details-card {
     grid-template-columns: 1fr;
   }
 
-  .post-ad form {
+  .chat-page {
     grid-template-columns: 1fr;
+  }
+
+  .profile-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .search-box {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 600px) {
+  .page-container,
+  .home-container,
+  .profile-container,
+  .edit-profile-container,
+  .admin-container,
+  .wishlist-container,
+  .my-ads-container,
+  .chat-container,
+  .product-details-container {
+    padding: 15px;
+    margin: 15px auto;
+  }
+
+  .hero,
+  .home-hero {
+    padding: 28px;
+  }
+
+  h1 {
+    font-size: 30px;
+  }
+
+  .product-details-card img {
+    height: 300px;
   }
 }
