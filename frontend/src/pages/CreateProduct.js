@@ -5,7 +5,6 @@ import API from "../api";
 
 const CreateProduct = () => {
   const navigate = useNavigate();
-
   const user = JSON.parse(localStorage.getItem("user"));
 
   const [title, setTitle] = useState("");
@@ -20,7 +19,8 @@ const CreateProduct = () => {
   const [street, setStreet] = useState("");
   const [building, setBuilding] = useState("");
 
-  const [error, setError] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -36,8 +36,8 @@ const CreateProduct = () => {
       const res = await axios.get(`${API}/categories`);
       setCategories(res.data);
     } catch (err) {
-      console.error(err);
-      setError(true);
+      console.error("Fetch categories error:", err);
+      setError("Failed to load categories");
     }
   };
 
@@ -49,7 +49,15 @@ const CreateProduct = () => {
       return;
     }
 
+    if (!title.trim() || !description.trim() || !price || !categoryId) {
+      setError("Please fill all required fields");
+      return;
+    }
+
     try {
+      setLoading(true);
+      setError("");
+
       // 1. Create location first
       const locRes = await axios.post(`${API}/locations`, {
         city_id: cityId || 1,
@@ -59,7 +67,7 @@ const CreateProduct = () => {
 
       const location_id = locRes.data.location_id;
 
-      // 2. Create product and attach logged-in user as seller
+      // 2. Create product
       await axios.post(`${API}/products`, {
         title,
         description,
@@ -70,122 +78,224 @@ const CreateProduct = () => {
         location_id,
       });
 
+      alert("Product added successfully");
       navigate("/my-ads");
     } catch (err) {
-      console.error(err);
-      setError(true);
+      console.error("Add product error:", err.response?.data || err);
+      setError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Something went wrong adding product"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   if (!user) {
     return (
-      <div style={{ padding: "20px" }}>
-        <h2>Add Product</h2>
-        <p>You need to login to add a product.</p>
+      <div className="my-ads-container">
+        <div className="empty-state">
+          <h1>Add Product</h1>
+          <p>You need to login or create an account to add a product.</p>
 
-        <button onClick={() => navigate("/login")}>Login</button>
+          <div className="button-group" style={{ justifyContent: "center" }}>
+            <button className="btn-primary" onClick={() => navigate("/login")}>
+              Login
+            </button>
 
-        <button
-          onClick={() => navigate("/signup")}
-          style={{ marginLeft: "10px" }}
-        >
-          Create New Account
-        </button>
+            <button className="btn-dark" onClick={() => navigate("/signup")}>
+              Create New Account
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="form-container" style={{ padding: "20px" }}>
-      <h2>Add New Product</h2>
+    <div className="my-ads-container">
+      {/* HEADER */}
+      <div className="home-hero">
+        <h1>Add New Product</h1>
+        <p>
+          Create a new listing and reach buyers looking for second-hand products.
+        </p>
 
-      <form onSubmit={handleSubmit}>
-        <label>Title:</label>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
+        <div className="button-group">
+          <button className="btn-dark" onClick={() => navigate("/my-ads")}>
+            Back to My Ads
+          </button>
 
-        <br />
+          <button className="btn-light" onClick={() => navigate("/")}>
+            Browse Products
+          </button>
+        </div>
+      </div>
 
-        <label>Description:</label>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          required
-        />
+      {/* FORM */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "2fr 1fr",
+          gap: "25px",
+          alignItems: "start",
+        }}
+      >
+        <form onSubmit={handleSubmit}>
+          <h2>Product Information</h2>
 
-        <br />
+          {error && (
+            <div
+              style={{
+                background: "#fee2e2",
+                color: "#991b1b",
+                padding: "12px",
+                borderRadius: "12px",
+                marginBottom: "18px",
+                fontWeight: "700",
+              }}
+            >
+              {error}
+            </div>
+          )}
 
-        <label>Price:</label>
-        <input
-          type="number"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          required
-        />
+          <label>Product Title</label>
+          <input
+            type="text"
+            placeholder="Example: iPhone 13 Pro Max"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+          />
 
-        <br />
+          <label>Description</label>
+          <textarea
+            placeholder="Describe your product condition, details, and anything buyers should know..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            required
+          />
 
-        <label>Category:</label>
-        <select
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-          required
-        >
-          <option value="">Select category</option>
+          <label>Price</label>
+          <input
+            type="number"
+            placeholder="Example: 250"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            required
+          />
 
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
+          <label>Category</label>
+          <select
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            required
+          >
+            <option value="">Select category</option>
 
-        <br />
+            {categories.map((cat) => {
+              const id = cat.id || cat.category_id;
+              const name = cat.name || cat.category_name;
 
-        <label>City ID:</label>
-        <input
-          type="number"
-          value={cityId}
-          onChange={(e) => setCityId(e.target.value)}
-          placeholder="Example: 1"
-        />
+              return (
+                <option key={id} value={id}>
+                  {name}
+                </option>
+              );
+            })}
+          </select>
 
-        <br />
+          <h2 style={{ marginTop: "25px" }}>Location</h2>
 
-        <label>Street:</label>
-        <input
-          value={street}
-          onChange={(e) => setStreet(e.target.value)}
-          required
-        />
+          <label>City ID</label>
+          <input
+            type="number"
+            value={cityId}
+            onChange={(e) => setCityId(e.target.value)}
+            placeholder="Example: 1"
+          />
 
-        <br />
+          <label>Street</label>
+          <input
+            type="text"
+            placeholder="Example: Mina Street"
+            value={street}
+            onChange={(e) => setStreet(e.target.value)}
+            required
+          />
 
-        <label>Building:</label>
-        <input
-          value={building}
-          onChange={(e) => setBuilding(e.target.value)}
-        />
+          <label>Building</label>
+          <input
+            type="text"
+            placeholder="Example: Abbas Building"
+            value={building}
+            onChange={(e) => setBuilding(e.target.value)}
+          />
 
-        <br />
+          <h2 style={{ marginTop: "25px" }}>Image</h2>
 
-        <label>Image URL:</label>
-        <input
-          value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
-        />
+          <label>Image URL</label>
+          <input
+            type="text"
+            placeholder="Paste product image URL"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+          />
 
-        <br />
+          <div className="button-group">
+            <button className="btn-primary" type="submit" disabled={loading}>
+              {loading ? "Adding Product..." : "Add Product"}
+            </button>
 
-        <button type="submit">Add product</button>
+            <button
+              className="btn-light"
+              type="button"
+              onClick={() => navigate("/my-ads")}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
 
-        {error && (
-          <p style={{ color: "red" }}>Something went wrong adding product.</p>
-        )}
-      </form>
+        {/* PREVIEW CARD */}
+        <div className="card">
+          <h2>Preview</h2>
+
+          <img
+            src={imageUrl || "/images/default.jpg"}
+            alt="preview"
+            style={{
+              width: "100%",
+              height: "230px",
+              objectFit: "cover",
+              borderRadius: "16px",
+              background: "#e5e7eb",
+              marginBottom: "15px",
+            }}
+          />
+
+          <h3>{title || "Product title"}</h3>
+
+          <p className="price">${price || "0"}</p>
+
+          <p style={{ color: "#6b7280" }}>
+            {description || "Product description will appear here."}
+          </p>
+
+          <p>
+            <strong>Street:</strong> {street || "Not added"}
+          </p>
+
+          <p>
+            <strong>Building:</strong> {building || "Not added"}
+          </p>
+
+          <p>
+            <strong>Seller:</strong> {user.username || "User"}
+          </p>
+        </div>
+      </div>
     </div>
   );
 };

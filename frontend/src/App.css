@@ -679,3 +679,9 @@ tr:hover td {
     height: 300px;
   }
 }
+
+@media (max-width: 900px) {
+  .my-ads-container > div[style*="grid-template-columns: 2fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+}
