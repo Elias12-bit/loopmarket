@@ -2,15 +2,55 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+// =========================
+// UPLOAD SETUP
+// =========================
+const uploadPath = path.join(__dirname, "../uploads");
+
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadPath);
+  },
+
+  filename: (req, file, cb) => {
+    const uniqueName =
+      Date.now() +
+      "-" +
+      Math.round(Math.random() * 1e9) +
+      path.extname(file.originalname);
+
+    cb(null, uniqueName);
+  },
+});
+
+const upload = multer({ storage });
+
+// =========================
 // GET ALL PRODUCTS
+// =========================
 router.get("/", (req, res) => {
   const sql = `
     SELECT 
-      p.*,
-      c.name AS category_name
-    FROM products p
-    LEFT JOIN categories c ON p.category_id = c.id
-    ORDER BY p.id DESC
+      products.*,
+      categories.name AS category_name,
+      locations.street,
+      locations.building,
+      cities.name AS city,
+      governorates.name AS governorate
+    FROM products
+    LEFT JOIN categories ON products.category_id = categories.id
+    LEFT JOIN locations ON products.location_id = locations.id
+    LEFT JOIN cities ON locations.city_id = cities.id
+    LEFT JOIN governorates ON cities.governorate_id = governorates.id
+    ORDER BY products.id DESC
   `;
 
   db.query(sql, (err, result) => {
@@ -26,19 +66,27 @@ router.get("/", (req, res) => {
   });
 });
 
-// GET PRODUCTS BY USER / MY ADS
-// IMPORTANT: this route must be BEFORE router.get("/:id")
+// =========================
+// GET PRODUCTS BY USER
+// =========================
 router.get("/user/:userId", (req, res) => {
   const { userId } = req.params;
 
   const sql = `
     SELECT 
-      p.*,
-      c.name AS category_name
-    FROM products p
-    LEFT JOIN categories c ON p.category_id = c.id
-    WHERE p.user_id = ?
-    ORDER BY p.id DESC
+      products.*,
+      categories.name AS category_name,
+      locations.street,
+      locations.building,
+      cities.name AS city,
+      governorates.name AS governorate
+    FROM products
+    LEFT JOIN categories ON products.category_id = categories.id
+    LEFT JOIN locations ON products.location_id = locations.id
+    LEFT JOIN cities ON locations.city_id = cities.id
+    LEFT JOIN governorates ON cities.governorate_id = governorates.id
+    WHERE products.user_id = ?
+    ORDER BY products.id DESC
   `;
 
   db.query(sql, [userId], (err, result) => {
@@ -54,22 +102,56 @@ router.get("/user/:userId", (req, res) => {
   });
 });
 
+// =========================
+// GET PRODUCT IMAGES
+// =========================
+router.get("/:id/images", (req, res) => {
+  const { id } = req.params;
+
+  const sql = `
+    SELECT *
+    FROM product_images
+    WHERE product_id = ?
+  `;
+
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.log("Get product images error:", err);
+      return res.status(500).json({
+        message: "Failed to get product images",
+        error: err.message,
+      });
+    }
+
+    res.json(result);
+  });
+});
+
+// =========================
 // GET ONE PRODUCT
+// =========================
 router.get("/:id", (req, res) => {
   const { id } = req.params;
 
   const sql = `
     SELECT 
-      p.*,
-      c.name AS category_name
-    FROM products p
-    LEFT JOIN categories c ON p.category_id = c.id
-    WHERE p.id = ?
+      products.*,
+      categories.name AS category_name,
+      locations.street,
+      locations.building,
+      cities.name AS city,
+      governorates.name AS governorate
+    FROM products
+    LEFT JOIN categories ON products.category_id = categories.id
+    LEFT JOIN locations ON products.location_id = locations.id
+    LEFT JOIN cities ON locations.city_id = cities.id
+    LEFT JOIN governorates ON cities.governorate_id = governorates.id
+    WHERE products.id = ?
   `;
 
   db.query(sql, [id], (err, result) => {
     if (err) {
-      console.log("Get product details error:", err);
+      console.log("Get product error:", err);
       return res.status(500).json({
         message: "Failed to get product",
         error: err.message,
@@ -86,23 +168,26 @@ router.get("/:id", (req, res) => {
   });
 });
 
-// ADD PRODUCT
-router.post("/", (req, res) => {
-  const {
-    title,
-    description,
-    price,
-    image_url,
-    user_id,
-    category_id,
-    location_id,
-  } = req.body;
+// =========================
+// ADD PRODUCT WITH MULTIPLE IMAGES
+// =========================
+router.post("/", upload.array("images", 5), (req, res) => {
+  const { title, description, price, user_id, category_id, location_id } =
+    req.body;
 
-  if (!user_id) {
+  if (!title || !description || !price || !user_id || !category_id || !location_id) {
     return res.status(400).json({
-      message: "user_id is required",
+      message: "Missing required product fields",
     });
   }
+
+  const files = req.files || [];
+
+  const imageUrls = files.map(
+    (file) => `${req.protocol}://${req.get("host")}/uploads/${file.filename}`
+  );
+
+  const mainImage = imageUrls.length > 0 ? imageUrls[0] : "";
 
   const sql = `
     INSERT INTO products 
@@ -112,7 +197,7 @@ router.post("/", (req, res) => {
 
   db.query(
     sql,
-    [title, description, price, image_url, user_id, category_id, location_id],
+    [title, description, price, mainImage, user_id, category_id, location_id],
     (err, result) => {
       if (err) {
         console.log("Add product error:", err);
@@ -122,39 +207,72 @@ router.post("/", (req, res) => {
         });
       }
 
-      res.json({
-        message: "Product added successfully",
-        productId: result.insertId,
-      });
+      const productId = result.insertId;
+
+      if (imageUrls.length === 0) {
+        return res.json({
+          message: "Product added successfully",
+          productId,
+          images: [],
+        });
+      }
+
+      const imageValues = imageUrls.map((url) => [productId, url]);
+
+      db.query(
+        "INSERT INTO product_images (product_id, image_url) VALUES ?",
+        [imageValues],
+        (imgErr) => {
+          if (imgErr) {
+            console.log("Add product images error:", imgErr);
+            return res.status(500).json({
+              message: "Product added but images failed",
+              error: imgErr.message,
+            });
+          }
+
+          res.json({
+            message: "Product added successfully",
+            productId,
+            images: imageUrls,
+          });
+        }
+      );
     }
   );
 });
 
+// =========================
 // UPDATE PRODUCT
-router.put("/:id", (req, res) => {
+// =========================
+router.put("/:id", upload.array("images", 5), (req, res) => {
   const { id } = req.params;
 
-  const {
-    title,
-    description,
-    price,
-    image_url,
-  } = req.body;
+  const { title, description, price } = req.body;
 
-  const sql = `
-    UPDATE products 
-    SET 
-      title = ?,
-      description = ?,
-      price = ?,
-      image_url = ?
-    WHERE id = ?
-  `;
+  if (!title || !description || !price) {
+    return res.status(400).json({
+      message: "Missing required product fields",
+    });
+  }
 
-  db.query(
-    sql,
-    [title, description, price, image_url, id],
-    (err) => {
+  const files = req.files || [];
+
+  const imageUrls = files.map(
+    (file) => `${req.protocol}://${req.get("host")}/uploads/${file.filename}`
+  );
+
+  const updateProductOnly = () => {
+    const sql = `
+      UPDATE products 
+      SET 
+        title = ?,
+        description = ?,
+        price = ?
+      WHERE id = ?
+    `;
+
+    db.query(sql, [title, description, price, id], (err) => {
       if (err) {
         console.log("Update product error:", err);
         return res.status(500).json({
@@ -166,69 +284,80 @@ router.put("/:id", (req, res) => {
       res.json({
         message: "Product updated successfully",
       });
-    }
-  );
+    });
+  };
+
+  const updateProductWithImages = () => {
+    const mainImage = imageUrls[0];
+
+    const sql = `
+      UPDATE products 
+      SET 
+        title = ?,
+        description = ?,
+        price = ?,
+        image_url = ?
+      WHERE id = ?
+    `;
+
+    db.query(sql, [title, description, price, mainImage, id], (err) => {
+      if (err) {
+        console.log("Update product error:", err);
+        return res.status(500).json({
+          message: "Failed to update product",
+          error: err.message,
+        });
+      }
+
+      const imageValues = imageUrls.map((url) => [id, url]);
+
+      db.query(
+        "INSERT INTO product_images (product_id, image_url) VALUES ?",
+        [imageValues],
+        (imgErr) => {
+          if (imgErr) {
+            console.log("Update product images error:", imgErr);
+            return res.status(500).json({
+              message: "Product updated but images failed",
+              error: imgErr.message,
+            });
+          }
+
+          res.json({
+            message: "Product updated successfully",
+            images: imageUrls,
+          });
+        }
+      );
+    });
+  };
+
+  if (imageUrls.length > 0) {
+    updateProductWithImages();
+  } else {
+    updateProductOnly();
+  }
 });
+
+// =========================
 // DELETE PRODUCT
-// Owner or admin can delete
+// =========================
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
-  const userId = req.headers.userid;
 
-  if (!userId) {
-    return res.status(401).json({
-      message: "User ID is required",
-    });
-  }
+  const sql = "DELETE FROM products WHERE id = ?";
 
-  const userSql = "SELECT role FROM users WHERE id = ?";
-
-  db.query(userSql, [userId], (userErr, userResult) => {
-    if (userErr) {
-      console.log("Check user role error:", userErr);
+  db.query(sql, [id], (err) => {
+    if (err) {
+      console.log("Delete product error:", err);
       return res.status(500).json({
-        message: "Failed to check user",
-        error: userErr.message,
+        message: "Failed to delete product",
+        error: err.message,
       });
     }
 
-    if (userResult.length === 0) {
-      return res.status(404).json({
-        message: "User not found",
-      });
-    }
-
-    const role = userResult[0].role;
-
-    let deleteSql;
-    let values;
-
-    if (role === "admin") {
-      deleteSql = "DELETE FROM products WHERE id = ?";
-      values = [id];
-    } else {
-      deleteSql = "DELETE FROM products WHERE id = ? AND user_id = ?";
-      values = [id, userId];
-    }
-
-    db.query(deleteSql, values, (deleteErr, result) => {
-      if (deleteErr) {
-        console.log("Delete product error:", deleteErr);
-        return res.status(500).json({
-          message: "Failed to delete product",
-          error: deleteErr.message,
-        });
-      }
-
-      if (result.affectedRows === 0) {
-        return res.status(403).json({
-          message: "You are not allowed to delete this product",
-        });
-      }
-
-      res.json({
-        message: "Product deleted successfully",
-      });
+    res.json({
+      message: "Product deleted successfully",
     });
   });
 });

@@ -10,7 +10,8 @@ const CreateProduct = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+
+  const [images, setImages] = useState([]);
 
   const [categories, setCategories] = useState([]);
   const [categoryId, setCategoryId] = useState("");
@@ -38,7 +39,7 @@ const CreateProduct = () => {
       const res = await axios.get(`${API}/categories`);
       setCategories(res.data);
     } catch (err) {
-      console.error("Fetch categories error:", err);
+      console.error("Fetch categories error:", err.response?.data || err);
       setError("Failed to load categories");
     }
   };
@@ -51,6 +52,17 @@ const CreateProduct = () => {
       console.error("Fetch cities error:", err.response?.data || err);
       setError("Failed to load cities");
     }
+  };
+
+  const handleImageChange = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+
+    if (selectedFiles.length > 5) {
+      alert("You can upload maximum 5 photos.");
+      return;
+    }
+
+    setImages(selectedFiles);
   };
 
   const handleSubmit = async (e) => {
@@ -92,15 +104,24 @@ const CreateProduct = () => {
         return;
       }
 
-      // 2. Create product
-      await axios.post(`${API}/products`, {
-        title,
-        description,
-        price,
-        image_url: imageUrl,
-        user_id: user.id,
-        category_id: categoryId,
-        location_id,
+      // 2. Create product using FormData because we are uploading files
+      const formData = new FormData();
+
+      formData.append("title", title);
+      formData.append("description", description);
+      formData.append("price", price);
+      formData.append("user_id", user.id);
+      formData.append("category_id", categoryId);
+      formData.append("location_id", location_id);
+
+      images.forEach((img) => {
+        formData.append("images", img);
+      });
+
+      await axios.post(`${API}/products`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       alert("Product added successfully");
@@ -122,6 +143,10 @@ const CreateProduct = () => {
 
   const selectedCity = cities.find(
     (city) => Number(city.id) === Number(cityId)
+  );
+
+  const selectedCategory = categories.find(
+    (cat) => Number(cat.id || cat.category_id) === Number(categoryId)
   );
 
   if (!user) {
@@ -150,8 +175,9 @@ const CreateProduct = () => {
       {/* HEADER */}
       <div className="home-hero">
         <h1>Add New Product</h1>
+
         <p>
-          Create a new listing and reach buyers looking for second-hand products.
+          Create a new listing and upload photos directly from your device.
         </p>
 
         <div className="button-group">
@@ -273,15 +299,19 @@ const CreateProduct = () => {
             onChange={(e) => setBuilding(e.target.value)}
           />
 
-          <h2 style={{ marginTop: "25px" }}>Image</h2>
+          <h2 style={{ marginTop: "25px" }}>Photos</h2>
 
-          <label>Image URL</label>
+          <label>Product Photos</label>
           <input
-            type="text"
-            placeholder="Paste product image URL"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleImageChange}
           />
+
+          <p style={{ color: "#6b7280", marginTop: "-10px" }}>
+            You can upload up to 5 photos.
+          </p>
 
           <div className="button-group">
             <button className="btn-primary" type="submit" disabled={loading}>
@@ -303,7 +333,11 @@ const CreateProduct = () => {
           <h2>Preview</h2>
 
           <img
-            src={imageUrl || "/images/default.jpg"}
+            src={
+              images.length > 0
+                ? URL.createObjectURL(images[0])
+                : "/images/default.jpg"
+            }
             alt="preview"
             style={{
               width: "100%",
@@ -315,6 +349,32 @@ const CreateProduct = () => {
             }}
           />
 
+          {images.length > 1 && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4, 1fr)",
+                gap: "8px",
+                marginBottom: "15px",
+              }}
+            >
+              {images.slice(1).map((img, index) => (
+                <img
+                  key={index}
+                  src={URL.createObjectURL(img)}
+                  alt="product preview"
+                  style={{
+                    width: "100%",
+                    height: "60px",
+                    objectFit: "cover",
+                    borderRadius: "10px",
+                    background: "#e5e7eb",
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
           <h3>{title || "Product title"}</h3>
 
           <p className="price">${price || "0"}</p>
@@ -325,16 +385,8 @@ const CreateProduct = () => {
 
           <p>
             <strong>Category:</strong>{" "}
-            {categoryId
-              ? categories.find(
-                  (cat) =>
-                    Number(cat.id || cat.category_id) === Number(categoryId)
-                )?.name ||
-                categories.find(
-                  (cat) =>
-                    Number(cat.id || cat.category_id) === Number(categoryId)
-                )?.category_name ||
-                "Selected"
+            {selectedCategory
+              ? selectedCategory.name || selectedCategory.category_name
               : "Not selected"}
           </p>
 
@@ -355,6 +407,10 @@ const CreateProduct = () => {
 
           <p>
             <strong>Building:</strong> {building || "Not added"}
+          </p>
+
+          <p>
+            <strong>Photos:</strong> {images.length}
           </p>
 
           <p>

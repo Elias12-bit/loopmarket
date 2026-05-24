@@ -2,9 +2,56 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+// =========================
+// UPLOAD SETUP
+// =========================
+const uploadPath = path.join(__dirname, "../uploads");
+
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadPath);
+  },
+
+  filename: (req, file, cb) => {
+    const uniqueName =
+      Date.now() +
+      "-" +
+      Math.round(Math.random() * 1e9) +
+      path.extname(file.originalname);
+
+    cb(null, uniqueName);
+  },
+});
+
+const upload = multer({ storage });
+
+// =========================
 // GET ALL USERS
+// =========================
 router.get("/", (req, res) => {
-  const sql = "SELECT * FROM users";
+  const sql = `
+    SELECT 
+      id,
+      username,
+      email,
+      phone,
+      address,
+      image_url,
+      description,
+      gender,
+      dob,
+      role
+    FROM users
+    ORDER BY id DESC
+  `;
 
   db.query(sql, (err, result) => {
     if (err) {
@@ -19,11 +66,27 @@ router.get("/", (req, res) => {
   });
 });
 
+// =========================
 // GET ONE USER BY ID
+// =========================
 router.get("/:id", (req, res) => {
   const { id } = req.params;
 
-  const sql = "SELECT * FROM users WHERE id = ?";
+  const sql = `
+    SELECT 
+      id,
+      username,
+      email,
+      phone,
+      address,
+      image_url,
+      description,
+      gender,
+      dob,
+      role
+    FROM users
+    WHERE id = ?
+  `;
 
   db.query(sql, [id], (err, result) => {
     if (err) {
@@ -44,8 +107,10 @@ router.get("/:id", (req, res) => {
   });
 });
 
-// UPDATE USER PROFILE
-router.put("/:id", (req, res) => {
+// =========================
+// UPDATE USER PROFILE WITH PROFILE IMAGE
+// =========================
+router.put("/:id", upload.single("profile_image"), (req, res) => {
   const { id } = req.params;
 
   const {
@@ -53,11 +118,16 @@ router.put("/:id", (req, res) => {
     email,
     phone,
     address,
-    image_url,
     description,
     gender,
     dob,
   } = req.body;
+
+  let image_url = req.body.image_url || "";
+
+  if (req.file) {
+    image_url = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+  }
 
   const sql = `
     UPDATE users
@@ -95,16 +165,60 @@ router.put("/:id", (req, res) => {
         });
       }
 
-      res.json({ message: "User updated successfully" });
+      res.json({
+        message: "User updated successfully",
+        image_url,
+      });
     }
   );
 });
 
+// =========================
+// CHANGE USER ROLE
+// =========================
+router.put("/:id/role", (req, res) => {
+  const { id } = req.params;
+  const { role } = req.body;
+
+  if (role !== "admin" && role !== "user") {
+    return res.status(400).json({
+      message: "Role must be admin or user",
+    });
+  }
+
+  const sql = `
+    UPDATE users
+    SET role = ?
+    WHERE id = ?
+  `;
+
+  db.query(sql, [role, id], (err) => {
+    if (err) {
+      console.log("Update role error:", err);
+      return res.status(500).json({
+        message: "Failed to update role",
+        error: err.message,
+      });
+    }
+
+    res.json({
+      message: "User role updated successfully",
+    });
+  });
+});
+
+// =========================
 // DELETE USER
+// =========================
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
 
-  db.query("DELETE FROM users WHERE id = ?", [id], (err) => {
+  const sql = `
+    DELETE FROM users
+    WHERE id = ?
+  `;
+
+  db.query(sql, [id], (err) => {
     if (err) {
       console.log("Delete user error:", err);
       return res.status(500).json({
@@ -113,7 +227,9 @@ router.delete("/:id", (req, res) => {
       });
     }
 
-    res.json({ message: "User deleted successfully" });
+    res.json({
+      message: "User deleted successfully",
+    });
   });
 });
 

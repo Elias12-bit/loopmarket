@@ -5,7 +5,6 @@ import API from "../api";
 
 const EditProfile = () => {
   const navigate = useNavigate();
-
   const user = JSON.parse(localStorage.getItem("user"));
 
   const [form, setForm] = useState({
@@ -20,7 +19,10 @@ const EditProfile = () => {
   });
 
   const [oldEmail, setOldEmail] = useState("");
-  const [error, setError] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
+  const [previewImage, setPreviewImage] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -44,14 +46,15 @@ const EditProfile = () => {
         phone: res.data.phone || "",
         address: res.data.address || "",
 
-        // email box stays empty unless user wants to change it
+        // Email input stays empty unless user wants to change it
         email: "",
       });
 
       setOldEmail(res.data.email || "");
+      setPreviewImage(res.data.image_url || "/images/default-user.png");
     } catch (err) {
-      console.error(err);
-      setError(true);
+      console.error("Fetch user error:", err.response?.data || err);
+      setError("Failed to load profile information");
     }
   };
 
@@ -60,137 +63,235 @@ const EditProfile = () => {
       ...form,
       [e.target.name]: e.target.value,
     });
+
+    setError("");
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    setProfileImage(file);
+    setPreviewImage(URL.createObjectURL(file));
   };
 
   const handleSave = async () => {
+    if (!form.username.trim()) {
+      setError("Username is required");
+      return;
+    }
+
     try {
-      const updatedData = {
-        username: form.username,
-        image_url: form.image_url,
-        description: form.description,
-        gender: form.gender,
-        dob: form.dob,
-        phone: form.phone,
-        address: form.address,
+      setLoading(true);
+      setError("");
 
-        // if email is empty, keep the old email
-        email: form.email.trim() === "" ? oldEmail : form.email,
-      };
+      const finalEmail =
+        form.email.trim() === "" ? oldEmail : form.email.trim();
 
-      await axios.put(`${API}/users/${user.id}`, updatedData);
+      const formData = new FormData();
+
+      formData.append("username", form.username);
+      formData.append("description", form.description);
+      formData.append("gender", form.gender);
+      formData.append("dob", form.dob);
+      formData.append("phone", form.phone);
+      formData.append("address", form.address);
+      formData.append("email", finalEmail);
+
+      // keep old image if user does not upload new one
+      formData.append("image_url", form.image_url);
+
+      if (profileImage) {
+        formData.append("profile_image", profileImage);
+      }
+
+      const res = await axios.put(`${API}/users/${user.id}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       const updatedUser = {
         ...user,
-        username: updatedData.username,
-        email: updatedData.email,
+        username: form.username,
+        email: finalEmail,
+        image_url: res.data.image_url || form.image_url || user.image_url,
       };
 
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
+      alert("Profile updated successfully");
       navigate("/profile");
     } catch (err) {
       console.error("Edit profile error:", err.response?.data || err);
-      alert(err.response?.data?.error || "Profile was not saved");
-      setError(true);
+
+      const errorMessage =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Profile was not saved";
+
+      alert(errorMessage);
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
   if (!user) return null;
 
   return (
-    <div className="edit-profile-container" style={{ padding: "20px" }}>
-      {/* TOP BAR */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginBottom: "20px",
-        }}
-      >
-        <button onClick={() => navigate("/profile")}>✖</button>
+    <div className="edit-profile-container">
+      {/* HEADER */}
+      <div className="home-hero">
+        <h1>Edit Profile</h1>
+        <p>Update your personal information and profile picture.</p>
 
-        <button onClick={handleSave}>Save</button>
+        <div className="button-group">
+          <button className="btn-dark" onClick={() => navigate("/profile")}>
+            Back to Profile
+          </button>
+
+          <button
+            className="btn-primary"
+            onClick={handleSave}
+            disabled={loading}
+          >
+            {loading ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
       </div>
 
-      <h2>Edit Profile</h2>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 2fr",
+          gap: "25px",
+          alignItems: "start",
+        }}
+      >
+        {/* PROFILE IMAGE PREVIEW */}
+        <div className="card" style={{ textAlign: "center" }}>
+          <h2>Profile Picture</h2>
 
-      {error && (
-        <p style={{ color: "red" }}>
-          Something went wrong. Profile was not saved.
-        </p>
-      )}
+          <img
+            src={previewImage || "/images/default-user.png"}
+            alt="profile preview"
+            style={{
+              width: "170px",
+              height: "170px",
+              borderRadius: "50%",
+              objectFit: "cover",
+              border: "5px solid #f59e0b",
+              background: "#e5e7eb",
+              marginBottom: "20px",
+            }}
+          />
 
-      <form>
-        <label>Username:</label>
-        <input
-          name="username"
-          value={form.username}
-          onChange={handleChange}
-          required
-        />
+          <label>Upload New Picture</label>
+          <input type="file" accept="image/*" onChange={handleImageChange} />
 
-        <br />
+          <p style={{ color: "#6b7280", fontSize: "14px" }}>
+            Choose a profile picture from your device.
+          </p>
+        </div>
 
-        <label>Profile Picture URL:</label>
-        <input
-          name="image_url"
-          value={form.image_url}
-          onChange={handleChange}
-        />
+        {/* FORM */}
+        <form>
+          <h2>Personal Information</h2>
 
-        <br />
+          {error && (
+            <div
+              style={{
+                background: "#fee2e2",
+                color: "#991b1b",
+                padding: "12px",
+                borderRadius: "12px",
+                marginBottom: "18px",
+                fontWeight: "700",
+              }}
+            >
+              {error}
+            </div>
+          )}
 
-        <label>Description:</label>
-        <textarea
-          name="description"
-          value={form.description}
-          onChange={handleChange}
-        />
+          <label>Username</label>
+          <input
+            name="username"
+            value={form.username}
+            onChange={handleChange}
+            placeholder="Enter your username"
+            required
+          />
 
-        <br />
+          <label>Description</label>
+          <textarea
+            name="description"
+            value={form.description}
+            onChange={handleChange}
+            placeholder="Write something about yourself..."
+          />
 
-        <label>Gender:</label>
-        <select name="gender" value={form.gender} onChange={handleChange}>
-          <option value="">Select gender</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-        </select>
+          <label>Gender</label>
+          <select name="gender" value={form.gender} onChange={handleChange}>
+            <option value="">Select gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
 
-        <br />
+          <label>Date of Birth</label>
+          <input
+            type="date"
+            name="dob"
+            value={form.dob}
+            onChange={handleChange}
+          />
 
-        <label>Date of Birth:</label>
-        <input
-          type="date"
-          name="dob"
-          value={form.dob}
-          onChange={handleChange}
-        />
+          <label>Phone Number</label>
+          <input
+            name="phone"
+            value={form.phone}
+            onChange={handleChange}
+            placeholder="Enter your phone number"
+          />
 
-        <br />
+          <label>Address</label>
+          <input
+            name="address"
+            value={form.address}
+            onChange={handleChange}
+            placeholder="Enter your address"
+          />
 
-        <label>Phone Number:</label>
-        <input name="phone" value={form.phone} onChange={handleChange} />
+          <label>Email</label>
+          <input
+            type="email"
+            name="email"
+            value={form.email}
+            onChange={handleChange}
+            placeholder="Enter new email only if you want to change it"
+          />
 
-        <br />
+          <div className="button-group">
+            <button
+              className="btn-primary"
+              type="button"
+              onClick={handleSave}
+              disabled={loading}
+            >
+              {loading ? "Saving..." : "Save Changes"}
+            </button>
 
-        <label>Address:</label>
-        <input
-          name="address"
-          value={form.address}
-          onChange={handleChange}
-        />
-
-        <br />
-
-        <label>Email:</label>
-        <input
-          type="email"
-          name="email"
-          value={form.email}
-          onChange={handleChange}
-          placeholder="Enter new email only if you want to change it"
-        />
-      </form>
+            <button
+              className="btn-light"
+              type="button"
+              onClick={() => navigate("/profile")}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
