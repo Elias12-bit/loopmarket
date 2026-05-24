@@ -86,159 +86,197 @@ const ChatPage = () => {
       fetchConversations();
     } catch (err) {
       console.error("Send message error:", err);
+      alert("Failed to send message");
     }
   };
 
   if (!user) {
     return (
-      <div style={{ padding: "20px" }}>
-        <h2>Chat</h2>
-        <p>You need to login to chat with sellers.</p>
+      <div className="profile-container">
+        <div className="empty-state">
+          <h1>Chat</h1>
+          <p>You need to login or create an account to chat with sellers.</p>
 
-        <button onClick={() => navigate("/login")}>Login</button>
+          <div className="button-group" style={{ justifyContent: "center" }}>
+            <button className="btn-primary" onClick={() => navigate("/login")}>
+              Login
+            </button>
 
-        <button
-          onClick={() => navigate("/signup")}
-          style={{ marginLeft: "10px" }}
-        >
-          Create New Account
-        </button>
+            <button className="btn-dark" onClick={() => navigate("/signup")}>
+              Create New Account
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div
-      className="chat-page"
-      style={{
-        display: "flex",
-        minHeight: "80vh",
-        padding: "20px",
-      }}
-    >
-      {/* LEFT SIDE - CONVERSATION LIST */}
-      <div
-        style={{
-          width: "30%",
-          borderRight: "1px solid #ccc",
-          paddingRight: "15px",
-        }}
-      >
-        <h2>Chats</h2>
+    <div className="chat-page">
+      {/* LEFT SIDE */}
+      <div className="chat-sidebar">
+        <div style={{ marginBottom: "20px" }}>
+          <h2>Messages</h2>
+          <p style={{ color: "#6b7280", marginTop: "-10px" }}>
+            Your conversations with buyers and sellers
+          </p>
+        </div>
 
         {conversations.length === 0 ? (
-          <p>No conversations yet</p>
+          <div className="empty-state" style={{ padding: "25px" }}>
+            <h3>No conversations yet</h3>
+            <p>Open a product and click chat with seller.</p>
+          </div>
         ) : (
           conversations.map((person) => (
             <div
               key={person.id}
               onClick={() => selectUser(person)}
+              className="chat-user"
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                padding: "10px",
-                cursor: "pointer",
-                borderBottom: "1px solid #eee",
-                backgroundColor:
-                  selectedUser?.id === person.id ? "#f0f0f0" : "white",
+                background:
+                  selectedUser?.id === person.id ? "#fef3c7" : "#f9fafb",
+                border:
+                  selectedUser?.id === person.id
+                    ? "1px solid #f59e0b"
+                    : "1px solid #e5e7eb",
               }}
             >
-              <img
-                src={person.image_url || "/images/default-user.png"}
-                alt="user"
+              <div
                 style={{
-                width: "45px",
-                height: "45px",
-                borderRadius: "50%",
-                objectFit: "cover",
-               }}
-              />
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                }}
+              >
+                <img
+                  src={person.image_url || "/images/default-user.png"}
+                  alt="user"
+                  style={{
+                    width: "48px",
+                    height: "48px",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    background: "#e5e7eb",
+                  }}
+                />
 
-              <div>
-                <strong>{person.username || person.name || "User"}</strong>
-                <p style={{ margin: 0, fontSize: "12px" }}>
-                  {person.email}
-                </p>
+                <div>
+                  <strong>{person.username || person.name || "User"}</strong>
+
+                  <p
+                    style={{
+                      margin: "3px 0 0",
+                      fontSize: "13px",
+                      color: "#6b7280",
+                    }}
+                  >
+                    {person.email || "No email"}
+                  </p>
+                </div>
               </div>
             </div>
           ))
         )}
       </div>
 
-      {/* RIGHT SIDE - CHAT BOX */}
-      <div
-        style={{
-          width: "70%",
-          paddingLeft: "20px",
-        }}
-      >
+      {/* RIGHT SIDE */}
+      <div className="chat-main">
         {!selectedUser ? (
-          <div>
-            <h2>Select a conversation</h2>
-            <p>Choose someone from the left or chat with a seller.</p>
+          <div
+            style={{
+              height: "100%",
+              minHeight: "620px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "30px",
+              textAlign: "center",
+            }}
+          >
+            <div>
+              <h1>Start a Conversation</h1>
+              <p style={{ color: "#6b7280" }}>
+                Select a chat from the left side or open a product and chat with
+                its seller.
+              </p>
+
+              <button className="btn-primary" onClick={() => navigate("/")}>
+                Browse Products
+              </button>
+            </div>
           </div>
         ) : (
           <>
-            <h2>
-              Chat with {selectedUser.username || selectedUser.name || "User"}
-            </h2>
+            {/* CHAT HEADER */}
+            <div className="chat-header">
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                }}
+              >
+                <img
+                  src={selectedUser.image_url || "/images/default-user.png"}
+                  alt="selected user"
+                  style={{
+                    width: "45px",
+                    height: "45px",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    background: "#e5e7eb",
+                  }}
+                />
 
-            <div
-              style={{
-                height: "60vh",
-                overflowY: "auto",
-                border: "1px solid #ddd",
-                padding: "10px",
-                marginBottom: "15px",
-              }}
-            >
+                <div>
+                  <div>
+                    Chat with{" "}
+                    {selectedUser.username || selectedUser.name || "User"}
+                  </div>
+
+                  <small style={{ color: "#d1d5db" }}>
+                    {selectedUser.email || "No email"}
+                  </small>
+                </div>
+              </div>
+            </div>
+
+            {/* MESSAGES */}
+            <div className="messages">
               {messages.length === 0 ? (
-                <p>No messages yet. Start the conversation.</p>
+                <div className="empty-state">
+                  <h3>No messages yet</h3>
+                  <p>Start the conversation by sending a message.</p>
+                </div>
               ) : (
-                messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    style={{
-                      textAlign:
-                        Number(msg.sender_id) === Number(currentUserId)
-                          ? "right"
-                          : "left",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        display: "inline-block",
-                        padding: "10px",
-                        borderRadius: "10px",
-                        backgroundColor:
-                          Number(msg.sender_id) === Number(currentUserId)
-                            ? "#DCF8C6"
-                            : "#eee",
-                      }}
+                messages.map((msg) => {
+                  const isSent =
+                    Number(msg.sender_id) === Number(currentUserId);
+
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`message ${isSent ? "sent" : "received"}`}
                     >
                       {msg.message}
-                    </span>
-                  </div>
-                ))
+                    </div>
+                  );
+                })
               )}
             </div>
 
-            <div style={{ display: "flex", gap: "10px" }}>
+            {/* INPUT */}
+            <div className="chat-input">
               <input
                 type="text"
-                placeholder="Type a message..."
+                placeholder="Type your message..."
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     sendMessage();
                   }
-                }}
-                style={{
-                  flex: 1,
-                  padding: "10px",
                 }}
               />
 
