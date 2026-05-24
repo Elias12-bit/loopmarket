@@ -5,13 +5,16 @@ import API from "../api";
 
 const Profile = () => {
   const [userDetails, setUserDetails] = useState(null);
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
 
+  const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
     if (user) {
       fetchUser();
+    } else {
+      setLoading(false);
     }
   }, []);
 
@@ -20,7 +23,9 @@ const Profile = () => {
       const res = await axios.get(`${API}/users/${user.id}`);
       setUserDetails(res.data);
     } catch (err) {
-      console.error(err);
+      console.error("Fetch profile error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -33,79 +38,179 @@ const Profile = () => {
   // GUEST PROFILE VIEW
   if (!user) {
     return (
-      <div className="profile-container" style={{ padding: "20px" }}>
-        <h2>Profile</h2>
-        <p>You are not logged in.</p>
+      <div className="profile-container">
+        <div className="empty-state">
+          <h1>Welcome to Loop Market</h1>
+          <p>You need to login or create an account to view your profile.</p>
 
-        <button onClick={() => navigate("/login")}>
-          Login
-        </button>
+          <div className="button-group" style={{ justifyContent: "center" }}>
+            <button className="btn-primary" onClick={() => navigate("/login")}>
+              Login
+            </button>
 
-        <button
-          onClick={() => navigate("/signup")}
-          style={{ marginLeft: "10px" }}
-        >
-          Create New Account
-        </button>
+            <button className="btn-dark" onClick={() => navigate("/signup")}>
+              Create New Account
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (!userDetails) return <p>Loading...</p>;
+  if (loading || !userDetails) {
+    return (
+      <div className="profile-container">
+        <div className="empty-state">
+          <h2>Loading profile...</h2>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="profile-container" style={{ padding: "20px" }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "20px",
-          marginBottom: "20px",
-        }}
-      >
+    <div className="profile-container">
+      {/* PROFILE HEADER */}
+      <div className="profile-card">
         <img
-          src={userDetails.image || userDetails.image_url || "/images/default-user.png"}
+          src={
+            userDetails.image ||
+            userDetails.image_url ||
+            "/images/default-user.png"
+          }
           alt="profile"
-          style={{
-            width: "90px",
-            height: "90px",
-            borderRadius: "50%",
-            objectFit: "cover",
-          }}
+          className="profile-image"
         />
 
-        <div>
-          <h2>{userDetails.username}</h2>
+        <div className="profile-info">
+          <p
+            style={{
+              color: "#f59e0b",
+              fontWeight: "800",
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              marginBottom: "5px",
+            }}
+          >
+            My Profile
+          </p>
 
-          <button onClick={() => navigate("/edit-profile")}>
-            View & Edit Profile
-          </button>
+          <h1>{userDetails.username || "User"}</h1>
+
+          <p style={{ color: "#6b7280" }}>
+            Manage your account, wishlist, chats, and product listings.
+          </p>
+
+          <div className="profile-actions">
+            <button
+              className="btn-primary"
+              onClick={() => navigate("/edit-profile")}
+            >
+              Edit Profile
+            </button>
+
+            <button className="btn-dark" onClick={() => navigate("/my-ads")}>
+              My Ads
+            </button>
+
+            <button className="btn-danger" onClick={handleLogout}>
+              Logout
+            </button>
+          </div>
         </div>
       </div>
 
-      <div style={{ marginBottom: "20px" }}>
-        <button onClick={() => navigate("/wishlist")}>
-          ❤️ Wishlist
-        </button>
-      </div>
-
-      <div style={{ marginBottom: "20px" }}>
-        <button onClick={() => navigate("/chat")}>
-          💬 Chats
-        </button>
-      </div>
-
-      <button
-        onClick={handleLogout}
+      {/* USER DETAILS */}
+      <div
         style={{
-          backgroundColor: "red",
-          color: "white",
-          padding: "10px 20px",
-          cursor: "pointer",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+          gap: "20px",
+          marginTop: "30px",
         }}
       >
-        Logout
-      </button>
+        <div className="card">
+          <h3>Email</h3>
+          <p>{userDetails.email || "Not available"}</p>
+        </div>
+
+        <div className="card">
+          <h3>Phone</h3>
+          <p>{userDetails.phone || "Not added"}</p>
+        </div>
+
+        <div className="card">
+          <h3>Address</h3>
+          <p>{userDetails.address || "Not added"}</p>
+        </div>
+
+        <div className="card">
+          <h3>Role</h3>
+          <p
+            style={{
+              fontWeight: "800",
+              color: userDetails.role === "admin" ? "#f59e0b" : "#111827",
+            }}
+          >
+            {userDetails.role || "user"}
+          </p>
+        </div>
+      </div>
+
+      {/* DESCRIPTION */}
+      <div className="admin-section" style={{ marginTop: "30px" }}>
+        <h3>About Me</h3>
+        <p>{userDetails.description || "No description added yet."}</p>
+      </div>
+
+      {/* QUICK ACTIONS */}
+      <div className="admin-section">
+        <h3>Quick Actions</h3>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: "20px",
+          }}
+        >
+          <div className="card">
+            <h3>❤️ Wishlist</h3>
+            <p>View products you saved for later.</p>
+            <button
+              className="btn-primary"
+              onClick={() => navigate("/wishlist")}
+            >
+              Open Wishlist
+            </button>
+          </div>
+
+          <div className="card">
+            <h3>💬 Chats</h3>
+            <p>Continue conversations with sellers and buyers.</p>
+            <button className="btn-dark" onClick={() => navigate("/chat")}>
+              Open Chats
+            </button>
+          </div>
+
+          <div className="card">
+            <h3>📦 My Ads</h3>
+            <p>Manage your published products.</p>
+            <button className="btn-primary" onClick={() => navigate("/my-ads")}>
+              View My Ads
+            </button>
+          </div>
+
+          {userDetails.role === "admin" && (
+            <div className="card">
+              <h3>🛠 Admin Panel</h3>
+              <p>Manage users, products, categories, and reviews.</p>
+              <button className="btn-dark" onClick={() => navigate("/admin")}>
+                Open Admin
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
