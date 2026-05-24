@@ -139,8 +139,6 @@ router.put("/:id", (req, res) => {
     description,
     price,
     image_url,
-    category_id,
-    location_id,
   } = req.body;
 
   const sql = `
@@ -149,15 +147,13 @@ router.put("/:id", (req, res) => {
       title = ?,
       description = ?,
       price = ?,
-      image_url = ?,
-      category_id = ?,
-      location_id = ?
+      image_url = ?
     WHERE id = ?
   `;
 
   db.query(
     sql,
-    [title, description, price, image_url, category_id, location_id, id],
+    [title, description, price, image_url, id],
     (err) => {
       if (err) {
         console.log("Update product error:", err);
@@ -173,7 +169,6 @@ router.put("/:id", (req, res) => {
     }
   );
 });
-
 // DELETE PRODUCT
 // Owner or admin can delete
 router.delete("/:id", (req, res) => {
