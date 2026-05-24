@@ -104,14 +104,19 @@ router.get("/user/:userId", (req, res) => {
 
 // =========================
 // GET PRODUCT IMAGES
+// IMPORTANT: this must be before router.get("/:id")
 // =========================
 router.get("/:id/images", (req, res) => {
   const { id } = req.params;
 
   const sql = `
-    SELECT *
+    SELECT 
+      id,
+      product_id,
+      image_url
     FROM product_images
     WHERE product_id = ?
+    ORDER BY id ASC
   `;
 
   db.query(sql, [id], (err, result) => {
@@ -175,7 +180,14 @@ router.post("/", upload.array("images", 5), (req, res) => {
   const { title, description, price, user_id, category_id, location_id } =
     req.body;
 
-  if (!title || !description || !price || !user_id || !category_id || !location_id) {
+  if (
+    !title ||
+    !description ||
+    !price ||
+    !user_id ||
+    !category_id ||
+    !location_id
+  ) {
     return res.status(400).json({
       message: "Missing required product fields",
     });
@@ -244,10 +256,11 @@ router.post("/", upload.array("images", 5), (req, res) => {
 
 // =========================
 // UPDATE PRODUCT
+// If user uploads new images, they are added to product_images
+// and first new image becomes main image.
 // =========================
 router.put("/:id", upload.array("images", 5), (req, res) => {
   const { id } = req.params;
-
   const { title, description, price } = req.body;
 
   if (!title || !description || !price) {
@@ -262,7 +275,8 @@ router.put("/:id", upload.array("images", 5), (req, res) => {
     (file) => `${req.protocol}://${req.get("host")}/uploads/${file.filename}`
   );
 
-  const updateProductOnly = () => {
+  // If no new images uploaded, update only text fields
+  if (imageUrls.length === 0) {
     const sql = `
       UPDATE products 
       SET 
@@ -285,62 +299,58 @@ router.put("/:id", upload.array("images", 5), (req, res) => {
         message: "Product updated successfully",
       });
     });
-  };
 
-  const updateProductWithImages = () => {
-    const mainImage = imageUrls[0];
+    return;
+  }
 
-    const sql = `
-      UPDATE products 
-      SET 
-        title = ?,
-        description = ?,
-        price = ?,
-        image_url = ?
-      WHERE id = ?
-    `;
+  // If new images uploaded, update main image too
+  const mainImage = imageUrls[0];
 
-    db.query(sql, [title, description, price, mainImage, id], (err) => {
-      if (err) {
-        console.log("Update product error:", err);
-        return res.status(500).json({
-          message: "Failed to update product",
-          error: err.message,
-        });
-      }
+  const updateSql = `
+    UPDATE products 
+    SET 
+      title = ?,
+      description = ?,
+      price = ?,
+      image_url = ?
+    WHERE id = ?
+  `;
 
-      const imageValues = imageUrls.map((url) => [id, url]);
+  db.query(updateSql, [title, description, price, mainImage, id], (err) => {
+    if (err) {
+      console.log("Update product error:", err);
+      return res.status(500).json({
+        message: "Failed to update product",
+        error: err.message,
+      });
+    }
 
-      db.query(
-        "INSERT INTO product_images (product_id, image_url) VALUES ?",
-        [imageValues],
-        (imgErr) => {
-          if (imgErr) {
-            console.log("Update product images error:", imgErr);
-            return res.status(500).json({
-              message: "Product updated but images failed",
-              error: imgErr.message,
-            });
-          }
+    const imageValues = imageUrls.map((url) => [id, url]);
 
-          res.json({
-            message: "Product updated successfully",
-            images: imageUrls,
+    db.query(
+      "INSERT INTO product_images (product_id, image_url) VALUES ?",
+      [imageValues],
+      (imgErr) => {
+        if (imgErr) {
+          console.log("Update product images error:", imgErr);
+          return res.status(500).json({
+            message: "Product updated but images failed",
+            error: imgErr.message,
           });
         }
-      );
-    });
-  };
 
-  if (imageUrls.length > 0) {
-    updateProductWithImages();
-  } else {
-    updateProductOnly();
-  }
+        res.json({
+          message: "Product updated successfully",
+          images: imageUrls,
+        });
+      }
+    );
+  });
 });
 
 // =========================
 // DELETE PRODUCT
+// product_images will delete automatically because of ON DELETE CASCADE
 // =========================
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
