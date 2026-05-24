@@ -12,7 +12,6 @@ const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
 
   const navigate = useNavigate();
-
   const user = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
@@ -26,7 +25,7 @@ const Home = () => {
       const res = await axios.get(`${API}/products`);
       setProducts(res.data);
     } catch (err) {
-      console.log(err);
+      console.log("Fetch products error:", err);
     }
   };
 
@@ -36,116 +35,154 @@ const Home = () => {
       const res = await axios.get(`${API}/categories`);
       setCategories(res.data);
     } catch (err) {
-      console.log(err);
+      console.log("Fetch categories error:", err);
     }
   };
 
   // FILTER PRODUCTS
   const filteredProducts = products.filter((product) => {
-    const matchSearch =
-      product.title &&
-      product.title.toLowerCase().includes(search.toLowerCase());
+    const title = product.title || "";
+    const category = product.category_name || product.name || "";
+
+    const matchSearch = title.toLowerCase().includes(search.toLowerCase());
 
     const matchCategory =
-      selectedCategory === "All" ||
-      product.category_name === selectedCategory;
+      selectedCategory === "All" || category === selectedCategory;
 
     return matchSearch && matchCategory;
   });
 
   return (
-    <div className="home-container" style={{ padding: "20px" }}>
-      <h2>Loop Market</h2>
+    <div className="home-container">
+      {/* HERO SECTION */}
+      <section className="home-hero">
+        <div>
+          <h1>Buy and Sell Second-Hand Items Easily</h1>
+          <p>
+            Discover great deals near you. Sell products, chat with sellers, and
+            find what you need on Loop Market.
+          </p>
+        </div>
 
-      {/* ADD PRODUCT BUTTON */}
-      <div style={{ textAlign: "right", marginBottom: "20px" }}>
+        <div className="search-box">
+          <input
+            type="text"
+            placeholder="Search for cars, phones, furniture..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          {user ? (
+            <button onClick={() => navigate("/add-product")}>
+              + Add Product
+            </button>
+          ) : (
+            <button onClick={() => navigate("/login")}>Login to Sell</button>
+          )}
+        </div>
+      </section>
+
+      {/* STATS SECTION */}
+      <section
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: "20px",
+          marginBottom: "30px",
+        }}
+      >
+        <div className="card">
+          <h3>{products.length}</h3>
+          <p>Total Listings</p>
+        </div>
+
+        <div className="card">
+          <h3>{categories.length}</h3>
+          <p>Categories</p>
+        </div>
+
+        <div className="card">
+          <h3>Secure</h3>
+          <p>Chat before buying</p>
+        </div>
+      </section>
+
+      {/* CATEGORIES */}
+      <section className="admin-section">
+        <h3>Browse Categories</h3>
+
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            flexWrap: "wrap",
+          }}
+        >
+          <button
+            className={selectedCategory === "All" ? "btn-primary" : "btn-light"}
+            onClick={() => setSelectedCategory("All")}
+          >
+            All
+          </button>
+
+          {categories.map((cat) => {
+            const categoryName = cat.name || cat.category_name;
+
+            return (
+              <button
+                key={cat.id || cat.category_id}
+                className={
+                  selectedCategory === categoryName ? "btn-primary" : "btn-light"
+                }
+                onClick={() => setSelectedCategory(categoryName)}
+              >
+                {categoryName}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* PRODUCTS HEADER */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "20px",
+          flexWrap: "wrap",
+          gap: "15px",
+        }}
+      >
+        <div>
+          <h2>Latest Products</h2>
+          <p style={{ color: "#6b7280", marginTop: "-10px" }}>
+            {filteredProducts.length} product
+            {filteredProducts.length !== 1 ? "s" : ""} found
+          </p>
+        </div>
+
         {user ? (
-          <button onClick={() => navigate("/add-product")}>
+          <button className="btn-primary" onClick={() => navigate("/add-product")}>
             + Add New Product
           </button>
         ) : (
-          <button onClick={() => navigate("/login")}>
+          <button className="btn-dark" onClick={() => navigate("/login")}>
             Login to Add Product
           </button>
         )}
       </div>
 
-      {/* SEARCH BAR */}
-      <div
-        className="search-bar"
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          marginBottom: "25px",
-        }}
-      >
-        <input
-          type="text"
-          placeholder="Search products..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{
-            width: "50%",
-            padding: "10px",
-            fontSize: "16px",
-          }}
-        />
-      </div>
-
-      {/* CATEGORIES */}
-      <div
-        className="categories-container"
-        style={{
-          textAlign: "center",
-          marginBottom: "25px",
-        }}
-      >
-        <h3>Categories</h3>
-
-        <div className="categories-list">
-          <button
-            onClick={() => setSelectedCategory("All")}
-            style={{ margin: "5px" }}
-          >
-            All
-          </button>
-
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.name)}
-              style={{ margin: "5px" }}
-            >
-              {cat.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* PRODUCTS */}
-      <div
-        className="products-container"
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "20px",
-          justifyContent: "center",
-        }}
-      >
-        {filteredProducts.length === 0 ? (
-          <p>No products found</p>
-        ) : (
-          filteredProducts.map((product) => (
-            <div
-              key={product.id}
-              className="product-card-wrapper"
-              style={{
-                width: "260px",
-                border: "1px solid #ddd",
-                borderRadius: "10px",
-                padding: "10px",
-              }}
-            >
+      {filteredProducts.length === 0 ? (
+        <div className="empty-state">
+          <h3>No products found</h3>
+          <p>Try searching with another keyword or choose another category.</p>
+        </div>
+      ) : (
+        <div className="products-grid">
+          {filteredProducts.map((product) => (
+            <div key={product.id} className="product-card">
               <ProductCard
                 image={product.image_url || "/images/default.jpg"}
                 title={product.title}
@@ -153,24 +190,32 @@ const Home = () => {
                 price={product.price}
               />
 
-              <p>
-                <strong>Category:</strong> {product.category_name}
-              </p>
+              <div style={{ marginTop: "15px" }}>
+                <p>
+                  <strong>Category:</strong>{" "}
+                  {product.category_name || "Not specified"}
+                </p>
 
-              <p>
-                <strong>Location:</strong>{" "}
-                {product.street && product.city && product.governorate
-                  ? `${product.street}, ${product.city}, ${product.governorate}`
-                  : "Not specified"}
-              </p>
+                <p>
+                  <strong>Location:</strong>{" "}
+                  {product.street && product.city && product.governorate
+                    ? `${product.street}, ${product.city}, ${product.governorate}`
+                    : "Not specified"}
+                </p>
+              </div>
 
-              <button onClick={() => navigate(`/product/${product.id}`)}>
-                View Details
-              </button>
+              <div className="button-group">
+                <button
+                  className="btn-primary"
+                  onClick={() => navigate(`/product/${product.id}`)}
+                >
+                  View Details
+                </button>
+              </div>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
