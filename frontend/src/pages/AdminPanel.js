@@ -51,9 +51,9 @@ const AdminPanel = () => {
       setNewCategory("");
       fetchCategories();
     } catch (err) {
-      console.error(err);
-      setError("Failed to add category");
-    }
+  console.error("Add category error:", err.response?.data || err);
+  alert(err.response?.data?.error || err.response?.data?.message || "Failed to add category");
+}
   };
 
   // =========================
