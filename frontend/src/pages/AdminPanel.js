@@ -1,125 +1,48 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import API from "../api";
 
 const AdminPanel = () => {
-  const [categories, setCategories] = useState([]);
+  const navigate = useNavigate();
+  const admin = JSON.parse(localStorage.getItem("user"));
+
   const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   const [newCategory, setNewCategory] = useState("");
-  const [error, setError] = useState("");
-
-  const user = JSON.parse(localStorage.getItem("user"));
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchCategories();
-    fetchUsers();
-    fetchProducts();
+    if (!admin || admin.role !== "admin") {
+      navigate("/");
+      return;
+    }
+
+    fetchAllData();
   }, []);
 
-  // =========================
-  // FETCH CATEGORIES
-  // =========================
-  const fetchCategories = async () => {
+  const fetchAllData = async () => {
     try {
-      const res = await axios.get(`${API}/categories`);
-      setCategories(res.data);
+      setLoading(true);
+
+      const usersRes = await axios.get(`${API}/users`);
+      const productsRes = await axios.get(`${API}/products`);
+      const categoriesRes = await axios.get(`${API}/categories`);
+
+      setUsers(usersRes.data);
+      setProducts(productsRes.data);
+      setCategories(categoriesRes.data);
     } catch (err) {
-      console.error("Fetch categories error:", err);
-      setError("Failed to load categories");
+      console.error("Admin fetch error:", err.response?.data || err);
+      alert("Failed to load admin data");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // =========================
-  // ADD CATEGORY
-  // =========================
-  const addCategory = async () => {
-    if (!newCategory.trim()) {
-      alert("Please enter a category name");
-      return;
-    }
-
-    try {
-      await axios.post(
-        `${API}/categories`,
-        { name: newCategory },
-        {
-          headers: {
-            userid: user?.id,
-          },
-        }
-      );
-
-      setNewCategory("");
-      fetchCategories();
-      alert("Category added successfully");
-    } catch (err) {
-      console.error("Add category error:", err.response?.data || err);
-      alert(
-        err.response?.data?.error ||
-          err.response?.data?.message ||
-          "Failed to add category"
-      );
-    }
-  };
-
-  // =========================
-  // DELETE CATEGORY
-  // =========================
-  const deleteCategory = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this category?"
-    );
-
-    if (!confirmDelete) return;
-
-    try {
-      await axios.delete(`${API}/categories/${id}`, {
-        headers: {
-          userid: user?.id,
-        },
-      });
-
-      fetchCategories();
-      alert("Category deleted successfully");
-    } catch (err) {
-      console.error("Delete category error:", err.response?.data || err);
-      alert(
-        err.response?.data?.error ||
-          err.response?.data?.message ||
-          "Failed to delete category"
-      );
-    }
-  };
-
-  // =========================
-  // FETCH USERS
-  // =========================
-  const fetchUsers = async () => {
-    try {
-      const res = await axios.get(`${API}/users`, {
-        headers: {
-          userid: user?.id,
-        },
-      });
-
-      setUsers(res.data);
-    } catch (err) {
-      console.error("Fetch users error:", err);
-      setError("Failed to load users");
-    }
-  };
-
-  // =========================
-  // DELETE USER
-  // =========================
-  const deleteUser = async (id) => {
-    if (Number(id) === Number(user?.id)) {
-      alert("You cannot delete your own admin account.");
-      return;
-    }
-
+  const deleteUser = async (userId) => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this user?"
     );
@@ -127,303 +50,316 @@ const AdminPanel = () => {
     if (!confirmDelete) return;
 
     try {
-      await axios.delete(`${API}/users/${id}`, {
-        headers: {
-          userid: user?.id,
-        },
-      });
+      await axios.delete(`${API}/users/${userId}`);
 
-      fetchUsers();
       alert("User deleted successfully");
+      fetchAllData();
     } catch (err) {
       console.error("Delete user error:", err.response?.data || err);
+
       alert(
-        err.response?.data?.error ||
-          err.response?.data?.message ||
+        err.response?.data?.message ||
+          err.response?.data?.error ||
           "Failed to delete user"
       );
     }
   };
 
-  // =========================
-  // FETCH PRODUCTS
-  // =========================
-  const fetchProducts = async () => {
-    try {
-      const res = await axios.get(`${API}/products`);
-      setProducts(res.data);
-    } catch (err) {
-      console.error("Fetch products error:", err);
-      setError("Failed to load products");
-    }
-  };
-
-  // =========================
-  // DELETE PRODUCT
-  // =========================
-  const deleteProduct = async (id) => {
+  const deleteProduct = async (productId) => {
     const confirmDelete = window.confirm(
-      "Are you sure you want to delete this listing?"
+      "Are you sure you want to delete this product?"
     );
 
     if (!confirmDelete) return;
 
     try {
-      await axios.delete(`${API}/products/${id}`, {
-        headers: {
-          userid: user?.id,
-        },
-      });
+      await axios.delete(`${API}/products/${productId}`);
 
-      fetchProducts();
-      alert("Listing deleted successfully");
+      alert("Product deleted successfully");
+      fetchAllData();
     } catch (err) {
       console.error("Delete product error:", err.response?.data || err);
+
       alert(
-        err.response?.data?.error ||
-          err.response?.data?.message ||
-          "Failed to delete listing"
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Failed to delete product"
       );
     }
   };
 
+  const addCategory = async (e) => {
+    e.preventDefault();
+
+    if (!newCategory.trim()) {
+      alert("Please enter category name");
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/categories`, {
+        name: newCategory,
+        category_name: newCategory,
+      });
+
+      alert("Category added successfully");
+      setNewCategory("");
+      fetchAllData();
+    } catch (err) {
+      console.error("Add category error:", err.response?.data || err);
+
+      alert(
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Failed to add category"
+      );
+    }
+  };
+
+  const deleteCategory = async (categoryId) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this category?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      await axios.delete(`${API}/categories/${categoryId}`);
+
+      alert("Category deleted successfully");
+      fetchAllData();
+    } catch (err) {
+      console.error("Delete category error:", err.response?.data || err);
+
+      alert(
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Failed to delete category"
+      );
+    }
+  };
+
+  const changeUserRole = async (userId, role) => {
+    try {
+      await axios.put(`${API}/users/${userId}/role`, {
+        role,
+      });
+
+      alert("User role updated successfully");
+      fetchAllData();
+    } catch (err) {
+      console.error("Change role error:", err.response?.data || err);
+
+      alert(
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Failed to change user role"
+      );
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="my-ads-container">
+        <div className="empty-state">
+          <h1>Loading admin panel...</h1>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="admin-container">
+    <div className="my-ads-container">
       {/* HEADER */}
       <div className="home-hero">
-        <h1>Admin Dashboard</h1>
-        <p>
-          Manage users, product listings, and categories from one control panel.
-        </p>
-      </div>
+        <h1>Admin Panel</h1>
+        <p>Manage users, products, and categories in Loop Market.</p>
 
-      {error && (
-        <div className="error-message" style={{ marginBottom: "25px" }}>
-          {error}
+        <div className="button-group">
+          <button className="btn-dark" onClick={() => navigate("/")}>
+            Back to Home
+          </button>
+
+          <button className="btn-light" onClick={fetchAllData}>
+            Refresh
+          </button>
         </div>
-      )}
+      </div>
 
       {/* STATS */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
+          gridTemplateColumns: "repeat(3, 1fr)",
           gap: "20px",
-          marginBottom: "30px",
+          marginBottom: "25px",
         }}
       >
         <div className="card">
-          <h3>Total Users</h3>
-          <p
-            style={{
-              fontSize: "32px",
-              fontWeight: "800",
-              color: "#f59e0b",
-            }}
-          >
-            {users.length}
-          </p>
+          <h2>{users.length}</h2>
+          <p>Total Users</p>
         </div>
 
         <div className="card">
-          <h3>Total Listings</h3>
-          <p
-            style={{
-              fontSize: "32px",
-              fontWeight: "800",
-              color: "#f59e0b",
-            }}
-          >
-            {products.length}
-          </p>
+          <h2>{products.length}</h2>
+          <p>Total Products</p>
         </div>
 
         <div className="card">
-          <h3>Total Categories</h3>
-          <p
-            style={{
-              fontSize: "32px",
-              fontWeight: "800",
-              color: "#f59e0b",
-            }}
-          >
-            {categories.length}
-          </p>
-        </div>
-
-        <div className="card">
-          <h3>Logged In As</h3>
-          <p style={{ fontWeight: "800" }}>{user?.username || "Admin"}</p>
-          <p style={{ color: "#6b7280" }}>{user?.role || "admin"}</p>
+          <h2>{categories.length}</h2>
+          <p>Total Categories</p>
         </div>
       </div>
 
-      {/* CATEGORY MANAGEMENT */}
-      <section className="admin-section">
-        <h3>Manage Categories</h3>
+      {/* CATEGORIES */}
+      <div className="admin-section">
+        <h2>Manage Categories</h2>
+
+        <form onSubmit={addCategory}>
+          <label>Add New Category</label>
+
+          <div className="button-group">
+            <input
+              type="text"
+              placeholder="Example: Electronics"
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+            />
+
+            <button className="btn-primary" type="submit">
+              Add Category
+            </button>
+          </div>
+        </form>
 
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr auto",
-            gap: "12px",
-            alignItems: "center",
-            marginBottom: "20px",
+            gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+            gap: "15px",
+            marginTop: "20px",
           }}
         >
-          <input
-            type="text"
-            placeholder="Enter new category name"
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") addCategory();
-            }}
-            style={{ marginBottom: "0" }}
-          />
+          {categories.map((cat) => {
+            const id = cat.id || cat.category_id;
+            const name = cat.name || cat.category_name;
 
-          <button className="btn-primary" onClick={addCategory}>
-            + Add Category
-          </button>
+            return (
+              <div className="card" key={id}>
+                <h3>{name}</h3>
+
+                <button
+                  className="btn-danger"
+                  onClick={() => deleteCategory(id)}
+                >
+                  Delete
+                </button>
+              </div>
+            );
+          })}
         </div>
+      </div>
 
-        {categories.length === 0 ? (
-          <div className="empty-state">
-            <p>No categories found.</p>
-          </div>
-        ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: "15px",
-            }}
-          >
-            {categories.map((cat) => {
-              const categoryId = cat.id || cat.category_id;
-              const categoryName = cat.name || cat.category_name;
+      {/* USERS */}
+      <div className="admin-section">
+        <h2>Manage Users</h2>
 
-              return (
-                <div className="card" key={categoryId}>
-                  <h3>{categoryName}</h3>
+        <div style={{ overflowX: "auto" }}>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>User</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Role</th>
+                <th>Change Role</th>
+                <th>Action</th>
+              </tr>
+            </thead>
 
-                  <button
-                    className="btn-danger"
-                    onClick={() => deleteCategory(categoryId)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
+            <tbody>
+              {users.map((user) => (
+                <tr key={user.id}>
+                  <td>{user.id}</td>
 
-      {/* USER MANAGEMENT */}
-      <section className="admin-section">
-        <h3>Manage Users</h3>
-
-        {users.length === 0 ? (
-          <div className="empty-state">
-            <p>No users found.</p>
-          </div>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>User</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Address</th>
-                  <th>Role</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u.id}>
-                    <td>{u.id}</td>
-
-                    <td>
-                      <div
+                  <td>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                      }}
+                    >
+                      <img
+                        src={user.image_url || "/images/default-user.png"}
+                        alt="user"
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "10px",
+                          width: "42px",
+                          height: "42px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                          background: "#e5e7eb",
                         }}
-                      >
-                        <img
-                          src={u.image_url || "/images/default-user.png"}
-                          alt="user"
-                          style={{
-                            width: "42px",
-                            height: "42px",
-                            borderRadius: "50%",
-                            objectFit: "cover",
-                            background: "#e5e7eb",
-                          }}
-                        />
+                      />
 
-                        <strong>{u.username || u.name || "Unknown"}</strong>
-                      </div>
-                    </td>
+                      <strong>{user.username}</strong>
+                    </div>
+                  </td>
 
-                    <td>{u.email || "Not available"}</td>
-                    <td>{u.phone || "Not added"}</td>
-                    <td>{u.address || "Not added"}</td>
+                  <td>{user.email}</td>
+                  <td>{user.phone || "Not added"}</td>
 
-                    <td>
-                      <span
-                        style={{
-                          background:
-                            u.role === "admin" ? "#fef3c7" : "#e5e7eb",
-                          color: u.role === "admin" ? "#92400e" : "#111827",
-                          padding: "6px 10px",
-                          borderRadius: "999px",
-                          fontWeight: "800",
-                          fontSize: "13px",
-                        }}
-                      >
-                        {u.role || "user"}
-                      </span>
-                    </td>
+                  <td>
+                    <strong
+                      style={{
+                        color: user.role === "admin" ? "#f59e0b" : "#111827",
+                      }}
+                    >
+                      {user.role}
+                    </strong>
+                  </td>
 
-                    <td>
+                  <td>
+                    <select
+                      value={user.role}
+                      onChange={(e) =>
+                        changeUserRole(user.id, e.target.value)
+                      }
+                    >
+                      <option value="user">user</option>
+                      <option value="admin">admin</option>
+                    </select>
+                  </td>
+
+                  <td>
+                    {user.role === "admin" ? (
+                      <button className="btn-light" disabled>
+                        Protected Admin
+                      </button>
+                    ) : (
                       <button
                         className="btn-danger"
-                        onClick={() => deleteUser(u.id)}
-                        disabled={Number(u.id) === Number(user?.id)}
-                        style={{
-                          opacity:
-                            Number(u.id) === Number(user?.id) ? "0.5" : "1",
-                          cursor:
-                            Number(u.id) === Number(user?.id)
-                              ? "not-allowed"
-                              : "pointer",
-                        }}
+                        onClick={() => deleteUser(user.id)}
                       >
                         Delete
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-      {/* LISTING MANAGEMENT */}
-      <section className="admin-section">
-        <h3>Manage Listings</h3>
+      {/* PRODUCTS */}
+      <div className="admin-section">
+        <h2>Manage Products</h2>
 
         {products.length === 0 ? (
           <div className="empty-state">
-            <p>No listings found.</p>
+            <p>No products found.</p>
           </div>
         ) : (
           <div className="products-grid">
@@ -434,39 +370,42 @@ const AdminPanel = () => {
                   alt={product.title}
                 />
 
-                <h3>{product.title}</h3>
+                <div className="product-card-body">
+                  <h3>{product.title}</h3>
 
-                <p className="price">${product.price}</p>
+                  <p className="price">${product.price}</p>
 
-                <p>
-                  <strong>Category:</strong>{" "}
-                  {product.category_name || product.category || "Not specified"}
-                </p>
+                  <p>
+                    <strong>Category:</strong>{" "}
+                    {product.category_name || "Not available"}
+                  </p>
 
-                <p>
-                  <strong>Location:</strong>{" "}
-                  {product.street && product.city && product.governorate
-                    ? `${product.street}, ${product.city}, ${product.governorate}`
-                    : product.location || "Not specified"}
-                </p>
+                  <p>
+                    <strong>City:</strong>{" "}
+                    {product.city || "Not available"}
+                  </p>
 
-                <p style={{ color: "#6b7280" }}>
-                  {product.description
-                    ? product.description.substring(0, 90) + "..."
-                    : "No description"}
-                </p>
+                  <div className="button-group">
+                    <button
+                      className="btn-primary"
+                      onClick={() => navigate(`/product/${product.id}`)}
+                    >
+                      View
+                    </button>
 
-                <button
-                  className="btn-danger"
-                  onClick={() => deleteProduct(product.id)}
-                >
-                  Delete Listing
-                </button>
+                    <button
+                      className="btn-danger"
+                      onClick={() => deleteProduct(product.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
         )}
-      </section>
+      </div>
     </div>
   );
 };

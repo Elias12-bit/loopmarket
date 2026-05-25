@@ -113,20 +113,18 @@ router.get("/:id", (req, res) => {
 router.put("/:id", upload.single("profile_image"), (req, res) => {
   const { id } = req.params;
 
-  const {
-    username,
-    email,
-    phone,
-    address,
-    description,
-    gender,
-    dob,
-  } = req.body;
+  const { username, email, phone, address, description, gender, dob } = req.body;
 
   let image_url = req.body.image_url || "";
 
   if (req.file) {
     image_url = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+  }
+
+  if (!username || !email) {
+    return res.status(400).json({
+      message: "Username and email are required",
+    });
   }
 
   const sql = `
@@ -209,26 +207,55 @@ router.put("/:id/role", (req, res) => {
 
 // =========================
 // DELETE USER
+// Prevent deleting admin users
 // =========================
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
 
-  const sql = `
-    DELETE FROM users
+  const checkSql = `
+    SELECT role
+    FROM users
     WHERE id = ?
   `;
 
-  db.query(sql, [id], (err) => {
-    if (err) {
-      console.log("Delete user error:", err);
+  db.query(checkSql, [id], (checkErr, result) => {
+    if (checkErr) {
+      console.log("Check user role error:", checkErr);
       return res.status(500).json({
-        message: "Failed to delete user",
-        error: err.message,
+        message: "Failed to check user role",
+        error: checkErr.message,
       });
     }
 
-    res.json({
-      message: "User deleted successfully",
+    if (result.length === 0) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    if (result[0].role === "admin") {
+      return res.status(403).json({
+        message: "Admin users cannot be deleted",
+      });
+    }
+
+    const deleteSql = `
+      DELETE FROM users
+      WHERE id = ?
+    `;
+
+    db.query(deleteSql, [id], (deleteErr) => {
+      if (deleteErr) {
+        console.log("Delete user error:", deleteErr);
+        return res.status(500).json({
+          message: "Failed to delete user",
+          error: deleteErr.message,
+        });
+      }
+
+      res.json({
+        message: "User deleted successfully",
+      });
     });
   });
 });
