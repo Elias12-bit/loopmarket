@@ -108,7 +108,7 @@ router.get("/:id", (req, res) => {
 });
 
 // =========================
-// UPDATE USER PROFILE WITH PROFILE IMAGE
+// UPDATE USER PROFILE
 // =========================
 router.put("/:id", upload.single("profile_image"), (req, res) => {
   const { id } = req.params;
@@ -173,41 +173,19 @@ router.put("/:id", upload.single("profile_image"), (req, res) => {
 
 // =========================
 // CHANGE USER ROLE
+// Disabled for safety
+// Admin panel is not allowed to change user/admin roles
 // =========================
 router.put("/:id/role", (req, res) => {
-  const { id } = req.params;
-  const { role } = req.body;
-
-  if (role !== "admin" && role !== "user") {
-    return res.status(400).json({
-      message: "Role must be admin or user",
-    });
-  }
-
-  const sql = `
-    UPDATE users
-    SET role = ?
-    WHERE id = ?
-  `;
-
-  db.query(sql, [role, id], (err) => {
-    if (err) {
-      console.log("Update role error:", err);
-      return res.status(500).json({
-        message: "Failed to update role",
-        error: err.message,
-      });
-    }
-
-    res.json({
-      message: "User role updated successfully",
-    });
+  return res.status(403).json({
+    message: "Changing user roles is not allowed from the admin panel",
   });
 });
 
 // =========================
 // DELETE USER
-// Prevent deleting admin users
+// Admin can delete only normal users
+// Admin users cannot be deleted
 // =========================
 router.delete("/:id", (req, res) => {
   const { id } = req.params;

@@ -139,25 +139,6 @@ const AdminPanel = () => {
     }
   };
 
-  const changeUserRole = async (userId, role) => {
-    try {
-      await axios.put(`${API}/users/${userId}/role`, {
-        role,
-      });
-
-      alert("User role updated successfully");
-      fetchAllData();
-    } catch (err) {
-      console.error("Change role error:", err.response?.data || err);
-
-      alert(
-        err.response?.data?.message ||
-          err.response?.data?.error ||
-          "Failed to change user role"
-      );
-    }
-  };
-
   if (loading) {
     return (
       <div className="my-ads-container">
@@ -263,6 +244,9 @@ const AdminPanel = () => {
       {/* USERS */}
       <div className="admin-section">
         <h2>Manage Users</h2>
+        <p style={{ color: "#6b7280", marginBottom: "20px" }}>
+          Admins are protected. You can only delete normal users.
+        </p>
 
         <div style={{ overflowX: "auto" }}>
           <table>
@@ -273,7 +257,6 @@ const AdminPanel = () => {
                 <th>Email</th>
                 <th>Phone</th>
                 <th>Role</th>
-                <th>Change Role</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -318,18 +301,6 @@ const AdminPanel = () => {
                     >
                       {user.role}
                     </strong>
-                  </td>
-
-                  <td>
-                    <select
-                      value={user.role}
-                      onChange={(e) =>
-                        changeUserRole(user.id, e.target.value)
-                      }
-                    >
-                      <option value="user">user</option>
-                      <option value="admin">admin</option>
-                    </select>
                   </td>
 
                   <td>
