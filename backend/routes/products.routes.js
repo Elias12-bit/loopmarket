@@ -2,37 +2,6 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-
-// =========================
-// UPLOAD SETUP
-// =========================
-const uploadPath = path.join(__dirname, "../uploads");
-
-if (!fs.existsSync(uploadPath)) {
-  fs.mkdirSync(uploadPath, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadPath);
-  },
-
-  filename: (req, file, cb) => {
-    const uniqueName =
-      Date.now() +
-      "-" +
-      Math.round(Math.random() * 1e9) +
-      path.extname(file.originalname);
-
-    cb(null, uniqueName);
-  },
-});
-
-const upload = multer({ storage });
-
 // =========================
 // GET ALL PRODUCTS
 // =========================
@@ -174,11 +143,18 @@ router.get("/:id", (req, res) => {
 });
 
 // =========================
-// ADD PRODUCT WITH MULTIPLE IMAGES
+// ADD PRODUCT WITH SUPABASE IMAGE URLS
 // =========================
-router.post("/", upload.array("images", 5), (req, res) => {
-  const { title, description, price, user_id, category_id, location_id } =
-    req.body;
+router.post("/", (req, res) => {
+  const {
+    title,
+    description,
+    price,
+    user_id,
+    category_id,
+    location_id,
+    image_urls,
+  } = req.body;
 
   if (
     !title ||
@@ -193,12 +169,7 @@ router.post("/", upload.array("images", 5), (req, res) => {
     });
   }
 
-  const files = req.files || [];
-
-  const imageUrls = files.map(
-    (file) => `${req.protocol}://${req.get("host")}/uploads/${file.filename}`
-  );
-
+  const imageUrls = Array.isArray(image_urls) ? image_urls : [];
   const mainImage = imageUrls.length > 0 ? imageUrls[0] : "";
 
   const sql = `
@@ -231,37 +202,38 @@ router.post("/", upload.array("images", 5), (req, res) => {
 
       const imageValues = imageUrls.map((url) => [productId, url]);
 
-      db.query(
-        "INSERT INTO product_images (product_id, image_url) VALUES ?",
-        [imageValues],
-        (imgErr) => {
-          if (imgErr) {
-            console.log("Add product images error:", imgErr);
-            return res.status(500).json({
-              message: "Product added but images failed",
-              error: imgErr.message,
-            });
-          }
+      const imagesSql = `
+        INSERT INTO product_images (product_id, image_url)
+        VALUES ?
+      `;
 
-          res.json({
-            message: "Product added successfully",
-            productId,
-            images: imageUrls,
+      db.query(imagesSql, [imageValues], (imgErr) => {
+        if (imgErr) {
+          console.log("Add product images error:", imgErr);
+          return res.status(500).json({
+            message: "Product added but images failed",
+            error: imgErr.message,
           });
         }
-      );
+
+        res.json({
+          message: "Product added successfully",
+          productId,
+          images: imageUrls,
+        });
+      });
     }
   );
 });
 
 // =========================
 // UPDATE PRODUCT
-// If user uploads new images, they are added to product_images
-// and first new image becomes main image.
+// This updates title, description, price.
+// If image_urls are sent, it replaces old product images.
 // =========================
-router.put("/:id", upload.array("images", 5), (req, res) => {
+router.put("/:id", (req, res) => {
   const { id } = req.params;
-  const { title, description, price } = req.body;
+  const { title, description, price, image_urls } = req.body;
 
   if (!title || !description || !price) {
     return res.status(400).json({
@@ -269,13 +241,9 @@ router.put("/:id", upload.array("images", 5), (req, res) => {
     });
   }
 
-  const files = req.files || [];
+  const imageUrls = Array.isArray(image_urls) ? image_urls : [];
 
-  const imageUrls = files.map(
-    (file) => `${req.protocol}://${req.get("host")}/uploads/${file.filename}`
-  );
-
-  // If no new images uploaded, update only text fields
+  // If no new images are sent, update only text fields
   if (imageUrls.length === 0) {
     const sql = `
       UPDATE products 
@@ -303,10 +271,10 @@ router.put("/:id", upload.array("images", 5), (req, res) => {
     return;
   }
 
-  // If new images uploaded, update main image too
+  // If new images are sent, replace old images
   const mainImage = imageUrls[0];
 
-  const updateSql = `
+  const updateProductSql = `
     UPDATE products 
     SET 
       title = ?,
@@ -316,41 +284,61 @@ router.put("/:id", upload.array("images", 5), (req, res) => {
     WHERE id = ?
   `;
 
-  db.query(updateSql, [title, description, price, mainImage, id], (err) => {
-    if (err) {
-      console.log("Update product error:", err);
-      return res.status(500).json({
-        message: "Failed to update product",
-        error: err.message,
-      });
-    }
+  db.query(
+    updateProductSql,
+    [title, description, price, mainImage, id],
+    (err) => {
+      if (err) {
+        console.log("Update product error:", err);
+        return res.status(500).json({
+          message: "Failed to update product",
+          error: err.message,
+        });
+      }
 
-    const imageValues = imageUrls.map((url) => [id, url]);
+      const deleteOldImagesSql = `
+        DELETE FROM product_images
+        WHERE product_id = ?
+      `;
 
-    db.query(
-      "INSERT INTO product_images (product_id, image_url) VALUES ?",
-      [imageValues],
-      (imgErr) => {
-        if (imgErr) {
-          console.log("Update product images error:", imgErr);
+      db.query(deleteOldImagesSql, [id], (deleteErr) => {
+        if (deleteErr) {
+          console.log("Delete old images error:", deleteErr);
           return res.status(500).json({
-            message: "Product updated but images failed",
-            error: imgErr.message,
+            message: "Product updated but old images failed to delete",
+            error: deleteErr.message,
           });
         }
 
-        res.json({
-          message: "Product updated successfully",
-          images: imageUrls,
+        const imageValues = imageUrls.map((url) => [id, url]);
+
+        const insertImagesSql = `
+          INSERT INTO product_images (product_id, image_url)
+          VALUES ?
+        `;
+
+        db.query(insertImagesSql, [imageValues], (imgErr) => {
+          if (imgErr) {
+            console.log("Update product images error:", imgErr);
+            return res.status(500).json({
+              message: "Product updated but images failed",
+              error: imgErr.message,
+            });
+          }
+
+          res.json({
+            message: "Product updated successfully",
+            images: imageUrls,
+          });
         });
-      }
-    );
-  });
+      });
+    }
+  );
 });
 
 // =========================
 // DELETE PRODUCT
-// product_images will delete automatically because of ON DELETE CASCADE
+// product_images will delete automatically if your FK has ON DELETE CASCADE
 // =========================
 router.delete("/:id", (req, res) => {
   const { id } = req.params;

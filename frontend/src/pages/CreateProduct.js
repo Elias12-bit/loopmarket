@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import API from "../api";
+import supabase from "../supabaseClient";
 
 const CreateProduct = () => {
   const navigate = useNavigate();
@@ -56,7 +57,6 @@ const CreateProduct = () => {
 
   const handleImageChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
-
     const newImages = [...images, ...selectedFiles];
 
     if (newImages.length > 5) {
@@ -66,13 +66,40 @@ const CreateProduct = () => {
     }
 
     setImages(newImages);
-
-    // This allows the user to choose another photo after already choosing one
     e.target.value = "";
   };
 
   const removeImage = (indexToRemove) => {
     setImages(images.filter((_, index) => index !== indexToRemove));
+  };
+
+  const uploadImagesToSupabase = async () => {
+    const uploadedUrls = [];
+
+    for (const image of images) {
+      const fileExt = image.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2)}.${fileExt}`;
+
+      const filePath = `products/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("loopmarket-images")
+        .upload(filePath, image);
+
+      if (uploadError) {
+        throw new Error(uploadError.message);
+      }
+
+      const { data } = supabase.storage
+        .from("loopmarket-images")
+        .getPublicUrl(filePath);
+
+      uploadedUrls.push(data.publicUrl);
+    }
+
+    return uploadedUrls;
   };
 
   const handleSubmit = async (e) => {
@@ -99,7 +126,10 @@ const CreateProduct = () => {
       setLoading(true);
       setError("");
 
-      // 1. Create location first
+      // 1. Upload photos to Supabase first
+      const imageUrls = await uploadImagesToSupabase();
+
+      // 2. Create location
       const locRes = await axios.post(`${API}/locations`, {
         city_id: cityId,
         street,
@@ -110,28 +140,18 @@ const CreateProduct = () => {
         locRes.data.location_id || locRes.data.id || locRes.data.insertId;
 
       if (!location_id) {
-        setError("Location was not created correctly");
-        return;
+        throw new Error("Location was not created correctly");
       }
 
-      // 2. Create product with photos
-      const formData = new FormData();
-
-      formData.append("title", title);
-      formData.append("description", description);
-      formData.append("price", price);
-      formData.append("user_id", user.id);
-      formData.append("category_id", categoryId);
-      formData.append("location_id", location_id);
-
-      images.forEach((img) => {
-        formData.append("images", img);
-      });
-
-      await axios.post(`${API}/products`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      // 3. Save product + image URLs in MySQL
+      await axios.post(`${API}/products`, {
+        title,
+        description,
+        price,
+        user_id: user.id,
+        category_id: categoryId,
+        location_id,
+        image_urls: imageUrls,
       });
 
       alert("Product added successfully");
@@ -183,13 +203,9 @@ const CreateProduct = () => {
 
   return (
     <div className="my-ads-container">
-      {/* HEADER */}
       <div className="home-hero">
         <h1>Add New Product</h1>
-
-        <p>
-          Create a new listing and upload photos directly from your device.
-        </p>
+        <p>Create a new listing and upload photos permanently.</p>
 
         <div className="button-group">
           <button className="btn-dark" onClick={() => navigate("/my-ads")}>
@@ -202,7 +218,6 @@ const CreateProduct = () => {
         </div>
       </div>
 
-      {/* FORM + PREVIEW */}
       <div
         style={{
           display: "grid",
@@ -240,7 +255,7 @@ const CreateProduct = () => {
 
           <label>Description</label>
           <textarea
-            placeholder="Describe your product condition, details, and anything buyers should know..."
+            placeholder="Describe your product condition and details..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
@@ -321,8 +336,7 @@ const CreateProduct = () => {
           />
 
           <p style={{ color: "#6b7280", marginTop: "-10px" }}>
-            You can upload up to 5 photos. You can choose them one by one or all
-            together.
+            You can upload up to 5 photos.
           </p>
 
           {images.length > 0 && (
@@ -387,7 +401,6 @@ const CreateProduct = () => {
           </div>
         </form>
 
-        {/* PREVIEW CARD */}
         <div className="card">
           <h2>Preview</h2>
 
@@ -407,32 +420,6 @@ const CreateProduct = () => {
               marginBottom: "15px",
             }}
           />
-
-          {images.length > 1 && (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
-                gap: "10px",
-                marginBottom: "15px",
-              }}
-            >
-              {images.slice(1).map((img, index) => (
-                <img
-                  key={index}
-                  src={URL.createObjectURL(img)}
-                  alt="product preview"
-                  style={{
-                    width: "100%",
-                    height: "75px",
-                    objectFit: "cover",
-                    borderRadius: "10px",
-                    background: "#e5e7eb",
-                  }}
-                />
-              ))}
-            </div>
-          )}
 
           <h3>{title || "Product title"}</h3>
 
