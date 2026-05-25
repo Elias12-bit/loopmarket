@@ -30,19 +30,13 @@ const Navbar = () => {
       }}
     >
       {/* LEFT SIDE */}
-      <div>
-        <Link
-          to="/"
-          style={{
-            color: "white",
-            textDecoration: "none",
-            fontSize: "24px",
-            fontWeight: "bold",
-          }}
-        >
-          Loop Market
-        </Link>
-      </div>
+      <div className="logo" onClick={() => navigate("/")}>
+  <img
+    src="/logo.png"
+    alt="Loop Market Logo"
+    className="navbar-logo"
+  />
+</div>
 
       {/* RIGHT SIDE */}
       <div

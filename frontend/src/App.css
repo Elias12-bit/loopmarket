@@ -685,3 +685,19 @@ tr:hover td {
     grid-template-columns: 1fr !important;
   }
 }
+
+.logo {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  overflow: visible;
+  cursor: pointer;
+}
+
+.navbar-logo {
+  height: 75px;
+  width: auto;
+  object-fit: contain;
+  transform: scale(1.7);
+  transform-origin: left center;
+}
