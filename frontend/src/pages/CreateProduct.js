@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import API from "../api";
@@ -12,17 +12,19 @@ const CreateProduct = () => {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
 
-  const [images, setImages] = useState([]);
-
   const [categories, setCategories] = useState([]);
-  const [categoryId, setCategoryId] = useState("");
-
+  const [subcategories, setSubcategories] = useState([]);
   const [cities, setCities] = useState([]);
+
+  const [categoryId, setCategoryId] = useState("");
+  const [subcategoryId, setSubcategoryId] = useState("");
   const [cityId, setCityId] = useState("");
+
   const [street, setStreet] = useState("");
   const [building, setBuilding] = useState("");
 
-  const [error, setError] = useState("");
+  const [images, setImages] = useState([]);
+
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -41,7 +43,7 @@ const CreateProduct = () => {
       setCategories(res.data);
     } catch (err) {
       console.error("Fetch categories error:", err.response?.data || err);
-      setError("Failed to load categories");
+      alert("Failed to load categories");
     }
   };
 
@@ -51,30 +53,55 @@ const CreateProduct = () => {
       setCities(res.data);
     } catch (err) {
       console.error("Fetch cities error:", err.response?.data || err);
-      setError("Failed to load cities");
+      alert("Failed to load cities");
     }
+  };
+
+  const fetchSubcategories = async (selectedCategoryId) => {
+    try {
+      setSubcategoryId("");
+      setSubcategories([]);
+
+      if (!selectedCategoryId) return;
+
+      const res = await axios.get(
+        `${API}/categories/${selectedCategoryId}/subcategories`
+      );
+
+      setSubcategories(res.data);
+    } catch (err) {
+      console.error("Fetch subcategories error:", err.response?.data || err);
+      alert("Failed to load subcategories");
+    }
+  };
+
+  const handleCategoryChange = (e) => {
+    const selectedCategoryId = e.target.value;
+
+    setCategoryId(selectedCategoryId);
+    fetchSubcategories(selectedCategoryId);
   };
 
   const handleImageChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
-    const newImages = [...images, ...selectedFiles];
 
-    if (newImages.length > 5) {
-      alert("You can upload maximum 5 photos.");
-      e.target.value = "";
+    if (images.length + selectedFiles.length > 5) {
+      alert("You can upload maximum 5 images");
       return;
     }
 
-    setImages(newImages);
+    setImages((prevImages) => [...prevImages, ...selectedFiles]);
+
     e.target.value = "";
   };
 
-  const removeImage = (indexToRemove) => {
-    setImages(images.filter((_, index) => index !== indexToRemove));
+  const removeSelectedImage = (index) => {
+    const updatedImages = images.filter((_, i) => i !== index);
+    setImages(updatedImages);
   };
 
   const uploadImagesToSupabase = async () => {
-    const uploadedUrls = [];
+    const imageUrls = [];
 
     for (const image of images) {
       const fileExt = image.name.split(".").pop();
@@ -89,23 +116,24 @@ const CreateProduct = () => {
         .upload(filePath, image);
 
       if (uploadError) {
-        throw new Error(uploadError.message);
+        throw uploadError;
       }
 
       const { data } = supabase.storage
         .from("loopmarket-images")
         .getPublicUrl(filePath);
 
-      uploadedUrls.push(data.publicUrl);
+      imageUrls.push(data.publicUrl);
     }
 
-    return uploadedUrls;
+    return imageUrls;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!user) {
+      alert("Please login first");
       navigate("/login");
       return;
     }
@@ -115,42 +143,43 @@ const CreateProduct = () => {
       !description.trim() ||
       !price ||
       !categoryId ||
-      !cityId ||
-      !street.trim()
+      !cityId
     ) {
-      setError("Please fill all required fields");
+      alert("Please fill all required fields");
+      return;
+    }
+
+    if (subcategories.length > 0 && !subcategoryId) {
+      alert("Please choose a subcategory");
+      return;
+    }
+
+    if (images.length === 0) {
+      alert("Please upload at least one product image");
       return;
     }
 
     try {
       setLoading(true);
-      setError("");
 
-      // 1. Upload photos to Supabase first
       const imageUrls = await uploadImagesToSupabase();
 
-      // 2. Create location
-      const locRes = await axios.post(`${API}/locations`, {
+      const locationRes = await axios.post(`${API}/locations`, {
         city_id: cityId,
         street,
         building,
       });
 
-      const location_id =
-        locRes.data.location_id || locRes.data.id || locRes.data.insertId;
+      const locationId = locationRes.data.location_id;
 
-      if (!location_id) {
-        throw new Error("Location was not created correctly");
-      }
-
-      // 3. Save product + image URLs in MySQL
       await axios.post(`${API}/products`, {
         title,
         description,
         price,
         user_id: user.id,
         category_id: categoryId,
-        location_id,
+        subcategory_id: subcategoryId || null,
+        location_id: locationId,
         image_urls: imageUrls,
       });
 
@@ -159,146 +188,88 @@ const CreateProduct = () => {
     } catch (err) {
       console.error("Add product error:", err.response?.data || err);
 
-      const errorMessage =
-        err.response?.data?.error ||
+      alert(
         err.response?.data?.message ||
-        err.message ||
-        "Something went wrong adding product";
-
-      alert(errorMessage);
-      setError(errorMessage);
+          err.response?.data?.error ||
+          err.message ||
+          "Failed to add product"
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const selectedCity = cities.find(
-    (city) => Number(city.id) === Number(cityId)
-  );
-
-  const selectedCategory = categories.find(
-    (cat) => Number(cat.id || cat.category_id) === Number(categoryId)
-  );
-
-  if (!user) {
-    return (
-      <div className="my-ads-container">
-        <div className="empty-state">
-          <h1>Add Product</h1>
-          <p>You need to login or create an account to add a product.</p>
-
-          <div className="button-group" style={{ justifyContent: "center" }}>
-            <button className="btn-primary" onClick={() => navigate("/login")}>
-              Login
-            </button>
-
-            <button className="btn-dark" onClick={() => navigate("/signup")}>
-              Create New Account
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="my-ads-container">
       <div className="home-hero">
-        <h1>Add New Product</h1>
-        <p>Create a new listing and upload photos permanently.</p>
+        <h1>Sell a Product</h1>
+        <p>Add your product details and upload up to 5 photos.</p>
 
         <div className="button-group">
-          <button className="btn-dark" onClick={() => navigate("/my-ads")}>
-            Back to My Ads
-          </button>
-
-          <button className="btn-light" onClick={() => navigate("/")}>
-            Browse Products
+          <button className="btn-dark" onClick={() => navigate("/")}>
+            Back to Home
           </button>
         </div>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "2fr 1fr",
-          gap: "25px",
-          alignItems: "start",
-        }}
-      >
+      <div className="admin-section">
         <form onSubmit={handleSubmit}>
-          <h2>Product Information</h2>
-
-          {error && (
-            <div
-              style={{
-                background: "#fee2e2",
-                color: "#991b1b",
-                padding: "12px",
-                borderRadius: "12px",
-                marginBottom: "18px",
-                fontWeight: "700",
-              }}
-            >
-              {error}
-            </div>
-          )}
-
-          <label>Product Title</label>
+          <label>Product Title *</label>
           <input
             type="text"
-            placeholder="Example: iPhone 13 Pro Max"
+            placeholder="Example: Toyota Truck"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            required
           />
 
-          <label>Description</label>
+          <label>Description *</label>
           <textarea
-            placeholder="Describe your product condition and details..."
+            placeholder="Describe your product..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            required
+            rows="5"
           />
 
-          <label>Price</label>
+          <label>Price *</label>
           <input
             type="number"
-            placeholder="Example: 250"
+            placeholder="Example: 5000"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
-            required
           />
 
-          <label>Category</label>
-          <select
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            required
-          >
-            <option value="">Select category</option>
+          <label>Category *</label>
+          <select value={categoryId} onChange={handleCategoryChange}>
+            <option value="">Choose category</option>
 
-            {categories.map((cat) => {
-              const id = cat.id || cat.category_id;
-              const name = cat.name || cat.category_name;
-
-              return (
-                <option key={id} value={id}>
-                  {name}
-                </option>
-              );
-            })}
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name || category.category_name}
+              </option>
+            ))}
           </select>
 
-          <h2 style={{ marginTop: "25px" }}>Location</h2>
+          {subcategories.length > 0 && (
+            <>
+              <label>Subcategory *</label>
+              <select
+                value={subcategoryId}
+                onChange={(e) => setSubcategoryId(e.target.value)}
+              >
+                <option value="">Choose subcategory</option>
 
-          <label>City</label>
-          <select
-            value={cityId}
-            onChange={(e) => setCityId(e.target.value)}
-            required
-          >
-            <option value="">Select city</option>
+                {subcategories.map((sub) => (
+                  <option key={sub.id} value={sub.id}>
+                    {sub.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+
+          <label>City *</label>
+          <select value={cityId} onChange={(e) => setCityId(e.target.value)}>
+            <option value="">Choose city</option>
 
             {cities.map((city) => (
               <option key={city.id} value={city.id}>
@@ -314,7 +285,6 @@ const CreateProduct = () => {
             placeholder="Example: Mina Street"
             value={street}
             onChange={(e) => setStreet(e.target.value)}
-            required
           />
 
           <label>Building</label>
@@ -325,9 +295,7 @@ const CreateProduct = () => {
             onChange={(e) => setBuilding(e.target.value)}
           />
 
-          <h2 style={{ marginTop: "25px" }}>Photos</h2>
-
-          <label>Product Photos</label>
+          <label>Product Images *</label>
           <input
             type="file"
             accept="image/*"
@@ -335,46 +303,53 @@ const CreateProduct = () => {
             onChange={handleImageChange}
           />
 
-          <p style={{ color: "#6b7280", marginTop: "-10px" }}>
-            You can upload up to 5 photos.
+          <p style={{ color: "#6b7280", marginTop: "8px" }}>
+            You can upload up to 5 images.
           </p>
 
           {images.length > 0 && (
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(5, 1fr)",
-                gap: "10px",
-                marginBottom: "18px",
+                gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+                gap: "15px",
+                marginTop: "15px",
+                marginBottom: "20px",
               }}
             >
-              {images.map((img, index) => (
-                <div key={index} style={{ position: "relative" }}>
+              {images.map((image, index) => (
+                <div
+                  key={index}
+                  style={{
+                    position: "relative",
+                    borderRadius: "14px",
+                    overflow: "hidden",
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
                   <img
-                    src={URL.createObjectURL(img)}
-                    alt="selected product"
+                    src={URL.createObjectURL(image)}
+                    alt="preview"
                     style={{
                       width: "100%",
-                      height: "80px",
+                      height: "120px",
                       objectFit: "cover",
-                      borderRadius: "10px",
-                      background: "#e5e7eb",
                     }}
                   />
 
                   <button
                     type="button"
-                    onClick={() => removeImage(index)}
+                    onClick={() => removeSelectedImage(index)}
                     style={{
                       position: "absolute",
-                      top: "5px",
-                      right: "5px",
-                      background: "#ef4444",
+                      top: "6px",
+                      right: "6px",
+                      background: "#dc2626",
                       color: "white",
                       border: "none",
                       borderRadius: "50%",
-                      width: "24px",
-                      height: "24px",
+                      width: "26px",
+                      height: "26px",
                       cursor: "pointer",
                       fontWeight: "bold",
                     }}
@@ -400,69 +375,6 @@ const CreateProduct = () => {
             </button>
           </div>
         </form>
-
-        <div className="card">
-          <h2>Preview</h2>
-
-          <img
-            src={
-              images.length > 0
-                ? URL.createObjectURL(images[0])
-                : "/images/default.jpg"
-            }
-            alt="preview"
-            style={{
-              width: "100%",
-              height: "230px",
-              objectFit: "cover",
-              borderRadius: "16px",
-              background: "#e5e7eb",
-              marginBottom: "15px",
-            }}
-          />
-
-          <h3>{title || "Product title"}</h3>
-
-          <p className="price">${price || "0"}</p>
-
-          <p style={{ color: "#6b7280" }}>
-            {description || "Product description will appear here."}
-          </p>
-
-          <p>
-            <strong>Category:</strong>{" "}
-            {selectedCategory
-              ? selectedCategory.name || selectedCategory.category_name
-              : "Not selected"}
-          </p>
-
-          <p>
-            <strong>City:</strong>{" "}
-            {selectedCity
-              ? `${selectedCity.name}${
-                  selectedCity.governorate_name
-                    ? ` - ${selectedCity.governorate_name}`
-                    : ""
-                }`
-              : "Not selected"}
-          </p>
-
-          <p>
-            <strong>Street:</strong> {street || "Not added"}
-          </p>
-
-          <p>
-            <strong>Building:</strong> {building || "Not added"}
-          </p>
-
-          <p>
-            <strong>Photos:</strong> {images.length}
-          </p>
-
-          <p>
-            <strong>Seller:</strong> {user.username || "User"}
-          </p>
-        </div>
       </div>
     </div>
   );
