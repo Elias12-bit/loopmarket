@@ -16,6 +16,7 @@ import EditProfile from "./pages/EditProfile";
 import ProductDetails from "./pages/ProductDetails";
 import CreateProduct from "./pages/CreateProduct";
 import UpdateProduct from "./pages/UpdateProduct";
+import CategoryPage from "./pages/CategoryPage";
 
 import ChatPage from "./pages/ChatPage";
 import Wishlist from "./pages/Wishlist";
@@ -48,6 +49,8 @@ function App() {
         />
 
         <Route path="/edit-profile" element={<EditProfile />} />
+
+        <Route path="/category/:id" element={<CategoryPage />} />
 
         {/* 🛍️ PRODUCTS */}
         <Route path="/product/:id" element={<ProductDetails />} />

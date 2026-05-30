@@ -3,26 +3,52 @@ const router = express.Router();
 const db = require("../db");
 
 // =========================
-// GET ALL PRODUCTS
+// GET ALL PRODUCTS WITH OPTIONAL FILTERS
+// Examples:
+// /products
+// /products?category_id=1
+// /products?category_id=1&subcategory_id=2
 // =========================
 router.get("/", (req, res) => {
-  const sql = `
+  const { category_id, subcategory_id } = req.query;
+
+  let sql = `
     SELECT 
       products.*,
       categories.name AS category_name,
+      subcategories.name AS subcategory_name,
       locations.street,
       locations.building,
       cities.name AS city,
       governorates.name AS governorate
     FROM products
     LEFT JOIN categories ON products.category_id = categories.id
+    LEFT JOIN subcategories ON products.subcategory_id = subcategories.id
     LEFT JOIN locations ON products.location_id = locations.id
     LEFT JOIN cities ON locations.city_id = cities.id
     LEFT JOIN governorates ON cities.governorate_id = governorates.id
-    ORDER BY products.id DESC
   `;
 
-  db.query(sql, (err, result) => {
+  const values = [];
+  const conditions = [];
+
+  if (category_id) {
+    conditions.push("products.category_id = ?");
+    values.push(category_id);
+  }
+
+  if (subcategory_id) {
+    conditions.push("products.subcategory_id = ?");
+    values.push(subcategory_id);
+  }
+
+  if (conditions.length > 0) {
+    sql += ` WHERE ${conditions.join(" AND ")}`;
+  }
+
+  sql += ` ORDER BY products.id DESC`;
+
+  db.query(sql, values, (err, result) => {
     if (err) {
       console.log("Get products error:", err);
       return res.status(500).json({
@@ -37,6 +63,7 @@ router.get("/", (req, res) => {
 
 // =========================
 // GET PRODUCTS BY USER
+// Example: /products/user/2
 // =========================
 router.get("/user/:userId", (req, res) => {
   const { userId } = req.params;
@@ -45,12 +72,14 @@ router.get("/user/:userId", (req, res) => {
     SELECT 
       products.*,
       categories.name AS category_name,
+      subcategories.name AS subcategory_name,
       locations.street,
       locations.building,
       cities.name AS city,
       governorates.name AS governorate
     FROM products
     LEFT JOIN categories ON products.category_id = categories.id
+    LEFT JOIN subcategories ON products.subcategory_id = subcategories.id
     LEFT JOIN locations ON products.location_id = locations.id
     LEFT JOIN cities ON locations.city_id = cities.id
     LEFT JOIN governorates ON cities.governorate_id = governorates.id
@@ -74,6 +103,7 @@ router.get("/user/:userId", (req, res) => {
 // =========================
 // GET PRODUCT IMAGES
 // IMPORTANT: this must be before router.get("/:id")
+// Example: /products/5/images
 // =========================
 router.get("/:id/images", (req, res) => {
   const { id } = req.params;
@@ -103,6 +133,7 @@ router.get("/:id/images", (req, res) => {
 
 // =========================
 // GET ONE PRODUCT
+// Example: /products/5
 // =========================
 router.get("/:id", (req, res) => {
   const { id } = req.params;
@@ -111,12 +142,14 @@ router.get("/:id", (req, res) => {
     SELECT 
       products.*,
       categories.name AS category_name,
+      subcategories.name AS subcategory_name,
       locations.street,
       locations.building,
       cities.name AS city,
       governorates.name AS governorate
     FROM products
     LEFT JOIN categories ON products.category_id = categories.id
+    LEFT JOIN subcategories ON products.subcategory_id = subcategories.id
     LEFT JOIN locations ON products.location_id = locations.id
     LEFT JOIN cities ON locations.city_id = cities.id
     LEFT JOIN governorates ON cities.governorate_id = governorates.id
@@ -152,6 +185,7 @@ router.post("/", (req, res) => {
     price,
     user_id,
     category_id,
+    subcategory_id,
     location_id,
     image_urls,
   } = req.body;
@@ -174,13 +208,22 @@ router.post("/", (req, res) => {
 
   const sql = `
     INSERT INTO products 
-    (title, description, price, image_url, user_id, category_id, location_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    (title, description, price, image_url, user_id, category_id, subcategory_id, location_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.query(
     sql,
-    [title, description, price, mainImage, user_id, category_id, location_id],
+    [
+      title,
+      description,
+      price,
+      mainImage,
+      user_id,
+      category_id,
+      subcategory_id || null,
+      location_id,
+    ],
     (err, result) => {
       if (err) {
         console.log("Add product error:", err);
@@ -228,12 +271,18 @@ router.post("/", (req, res) => {
 
 // =========================
 // UPDATE PRODUCT
-// This updates title, description, price.
 // If image_urls are sent, it replaces old product images.
 // =========================
 router.put("/:id", (req, res) => {
   const { id } = req.params;
-  const { title, description, price, image_urls } = req.body;
+  const {
+    title,
+    description,
+    price,
+    category_id,
+    subcategory_id,
+    image_urls,
+  } = req.body;
 
   if (!title || !description || !price) {
     return res.status(400).json({
@@ -243,107 +292,101 @@ router.put("/:id", (req, res) => {
 
   const imageUrls = Array.isArray(image_urls) ? image_urls : [];
 
-  // If no new images are sent, update only text fields
-  if (imageUrls.length === 0) {
-    const sql = `
-      UPDATE products 
-      SET 
-        title = ?,
-        description = ?,
-        price = ?
-      WHERE id = ?
-    `;
+  const mainImage = imageUrls.length > 0 ? imageUrls[0] : null;
 
-    db.query(sql, [title, description, price, id], (err) => {
-      if (err) {
-        console.log("Update product error:", err);
-        return res.status(500).json({
-          message: "Failed to update product",
-          error: err.message,
-        });
-      }
-
-      res.json({
-        message: "Product updated successfully",
-      });
-    });
-
-    return;
-  }
-
-  // If new images are sent, replace old images
-  const mainImage = imageUrls[0];
-
-  const updateProductSql = `
+  let updateProductSql = `
     UPDATE products 
     SET 
       title = ?,
       description = ?,
-      price = ?,
-      image_url = ?
-    WHERE id = ?
+      price = ?
   `;
 
-  db.query(
-    updateProductSql,
-    [title, description, price, mainImage, id],
-    (err) => {
-      if (err) {
-        console.log("Update product error:", err);
+  const values = [title, description, price];
+
+  if (category_id) {
+    updateProductSql += `, category_id = ?`;
+    values.push(category_id);
+  }
+
+  if (subcategory_id !== undefined) {
+    updateProductSql += `, subcategory_id = ?`;
+    values.push(subcategory_id || null);
+  }
+
+  if (mainImage) {
+    updateProductSql += `, image_url = ?`;
+    values.push(mainImage);
+  }
+
+  updateProductSql += ` WHERE id = ?`;
+  values.push(id);
+
+  db.query(updateProductSql, values, (err) => {
+    if (err) {
+      console.log("Update product error:", err);
+      return res.status(500).json({
+        message: "Failed to update product",
+        error: err.message,
+      });
+    }
+
+    if (imageUrls.length === 0) {
+      return res.json({
+        message: "Product updated successfully",
+      });
+    }
+
+    const deleteOldImagesSql = `
+      DELETE FROM product_images
+      WHERE product_id = ?
+    `;
+
+    db.query(deleteOldImagesSql, [id], (deleteErr) => {
+      if (deleteErr) {
+        console.log("Delete old images error:", deleteErr);
         return res.status(500).json({
-          message: "Failed to update product",
-          error: err.message,
+          message: "Product updated but old images failed to delete",
+          error: deleteErr.message,
         });
       }
 
-      const deleteOldImagesSql = `
-        DELETE FROM product_images
-        WHERE product_id = ?
+      const imageValues = imageUrls.map((url) => [id, url]);
+
+      const insertImagesSql = `
+        INSERT INTO product_images (product_id, image_url)
+        VALUES ?
       `;
 
-      db.query(deleteOldImagesSql, [id], (deleteErr) => {
-        if (deleteErr) {
-          console.log("Delete old images error:", deleteErr);
+      db.query(insertImagesSql, [imageValues], (imgErr) => {
+        if (imgErr) {
+          console.log("Update product images error:", imgErr);
           return res.status(500).json({
-            message: "Product updated but old images failed to delete",
-            error: deleteErr.message,
+            message: "Product updated but images failed",
+            error: imgErr.message,
           });
         }
 
-        const imageValues = imageUrls.map((url) => [id, url]);
-
-        const insertImagesSql = `
-          INSERT INTO product_images (product_id, image_url)
-          VALUES ?
-        `;
-
-        db.query(insertImagesSql, [imageValues], (imgErr) => {
-          if (imgErr) {
-            console.log("Update product images error:", imgErr);
-            return res.status(500).json({
-              message: "Product updated but images failed",
-              error: imgErr.message,
-            });
-          }
-
-          res.json({
-            message: "Product updated successfully",
-            images: imageUrls,
-          });
+        res.json({
+          message: "Product updated successfully",
+          images: imageUrls,
         });
       });
-    }
-  );
+    });
+  });
 });
 
 // =========================
 // DELETE PRODUCT
-// product_images will delete automatically if your FK has ON DELETE CASCADE
+// product_images will delete automatically if FK has ON DELETE CASCADE
 // =========================
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
 
-  const sql = "DELETE FROM products WHERE id = ?";
+  const sql = `
+    DELETE FROM products
+    WHERE id = ?
+  `;
 
   db.query(sql, [id], (err) => {
     if (err) {
