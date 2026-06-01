@@ -12,6 +12,11 @@ const AdminPanel = () => {
   const [categories, setCategories] = useState([]);
 
   const [newCategory, setNewCategory] = useState("");
+
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [newSubcategory, setNewSubcategory] = useState("");
+  const [subcategoriesByCategory, setSubcategoriesByCategory] = useState({});
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,11 +39,33 @@ const AdminPanel = () => {
       setUsers(usersRes.data);
       setProducts(productsRes.data);
       setCategories(categoriesRes.data);
+
+      await fetchAllSubcategories(categoriesRes.data);
     } catch (err) {
       console.error("Admin fetch error:", err.response?.data || err);
       alert("Failed to load admin data");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAllSubcategories = async (categoriesList) => {
+    try {
+      const subcategoryData = {};
+
+      await Promise.all(
+        categoriesList.map(async (category) => {
+          const id = category.id || category.category_id;
+
+          const res = await axios.get(`${API}/categories/${id}/subcategories`);
+
+          subcategoryData[id] = res.data;
+        })
+      );
+
+      setSubcategoriesByCategory(subcategoryData);
+    } catch (err) {
+      console.error("Fetch subcategories error:", err.response?.data || err);
     }
   };
 
@@ -139,6 +166,64 @@ const AdminPanel = () => {
     }
   };
 
+  const addSubcategory = async (e) => {
+    e.preventDefault();
+
+    if (!selectedCategoryId) {
+      alert("Please choose a category");
+      return;
+    }
+
+    if (!newSubcategory.trim()) {
+      alert("Please enter subcategory name");
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/categories/${selectedCategoryId}/subcategories`, {
+        name: newSubcategory,
+      });
+
+      alert("Subcategory added successfully");
+
+      setNewSubcategory("");
+      setSelectedCategoryId("");
+
+      fetchAllData();
+    } catch (err) {
+      console.error("Add subcategory error:", err.response?.data || err);
+
+      alert(
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Failed to add subcategory"
+      );
+    }
+  };
+
+  const deleteSubcategory = async (subcategoryId) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this subcategory?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      await axios.delete(`${API}/categories/subcategories/${subcategoryId}`);
+
+      alert("Subcategory deleted successfully");
+      fetchAllData();
+    } catch (err) {
+      console.error("Delete subcategory error:", err.response?.data || err);
+
+      alert(
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Failed to delete subcategory"
+      );
+    }
+  };
+
   if (loading) {
     return (
       <div className="my-ads-container">
@@ -154,7 +239,7 @@ const AdminPanel = () => {
       {/* HEADER */}
       <div className="home-hero">
         <h1>Admin Panel</h1>
-        <p>Manage users, products, and categories in Loop Market.</p>
+        <p>Manage users, products, categories, and subcategories in Loop Market.</p>
 
         <div className="button-group">
           <button className="btn-dark" onClick={() => navigate("/")}>
@@ -192,7 +277,7 @@ const AdminPanel = () => {
         </div>
       </div>
 
-      {/* CATEGORIES */}
+      {/* CATEGORIES AND SUBCATEGORIES */}
       <div className="admin-section">
         <h2>Manage Categories</h2>
 
@@ -235,6 +320,105 @@ const AdminPanel = () => {
                 >
                   Delete
                 </button>
+              </div>
+            );
+          })}
+        </div>
+
+        <hr style={{ margin: "30px 0", border: "1px solid #e5e7eb" }} />
+
+        <h2>Manage Subcategories</h2>
+
+        <form onSubmit={addSubcategory}>
+          <label>Choose Category</label>
+
+          <select
+            value={selectedCategoryId}
+            onChange={(e) => setSelectedCategoryId(e.target.value)}
+          >
+            <option value="">Choose category</option>
+
+            {categories.map((cat) => {
+              const id = cat.id || cat.category_id;
+              const name = cat.name || cat.category_name;
+
+              return (
+                <option key={id} value={id}>
+                  {name}
+                </option>
+              );
+            })}
+          </select>
+
+          <label>Add New Subcategory</label>
+
+          <div className="button-group">
+            <input
+              type="text"
+              placeholder="Example: Cars, TVs, Sofas"
+              value={newSubcategory}
+              onChange={(e) => setNewSubcategory(e.target.value)}
+            />
+
+            <button className="btn-primary" type="submit">
+              Add Subcategory
+            </button>
+          </div>
+        </form>
+
+        <div style={{ marginTop: "25px" }}>
+          {categories.map((cat) => {
+            const categoryId = cat.id || cat.category_id;
+            const categoryName = cat.name || cat.category_name;
+            const subcategories = subcategoriesByCategory[categoryId] || [];
+
+            return (
+              <div
+                key={categoryId}
+                className="card"
+                style={{ marginBottom: "18px" }}
+              >
+                <h3>{categoryName}</h3>
+
+                {subcategories.length === 0 ? (
+                  <p style={{ color: "#6b7280" }}>No subcategories yet.</p>
+                ) : (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "10px",
+                      marginTop: "12px",
+                    }}
+                  >
+                    {subcategories.map((sub) => (
+                      <div
+                        key={sub.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          background: "#f3f4f6",
+                          padding: "8px 10px",
+                          borderRadius: "10px",
+                        }}
+                      >
+                        <strong>{sub.name}</strong>
+
+                        <button
+                          className="btn-danger"
+                          style={{
+                            padding: "5px 8px",
+                            fontSize: "12px",
+                          }}
+                          onClick={() => deleteSubcategory(sub.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -350,6 +534,13 @@ const AdminPanel = () => {
                     <strong>Category:</strong>{" "}
                     {product.category_name || "Not available"}
                   </p>
+
+                  {product.subcategory_name && (
+                    <p>
+                      <strong>Subcategory:</strong>{" "}
+                      {product.subcategory_name}
+                    </p>
+                  )}
 
                   <p>
                     <strong>City:</strong>{" "}
